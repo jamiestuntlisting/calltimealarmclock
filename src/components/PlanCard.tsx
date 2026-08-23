@@ -41,25 +41,35 @@ export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props)
   const tone = toneFor(plan, prefs)
   const verdict = verdictText(plan, tone)
   const wakeIsPreviousDay = isDifferentDay(plan.wakeAt, plan.callAt)
+  const leaveIsPreviousDay = isDifferentDay(plan.leaveAt, plan.callAt)
 
   return (
     <div className="plan">
-      <div className="hero">
-        <div className="hero-label">Alarm</div>
-        <div className="hero-time">{formatClock(plan.wakeAt)}</div>
-        <div className="hero-day">
-          {formatDay(plan.wakeAt)}
-          {wakeIsPreviousDay && ' — night before'}
+      <div className="alarms">
+        <div className="alarm">
+          <div className="hero-label">Wake up</div>
+          <div className="hero-time">{formatClock(plan.wakeAt)}</div>
+          <div className="hero-day">
+            {wakeIsPreviousDay ? `${formatDay(plan.wakeAt)} — night before` : formatDay(plan.wakeAt)}
+          </div>
+        </div>
+        <div className="alarm">
+          <div className="hero-label">Leave</div>
+          <div className="hero-time">{formatClock(plan.leaveAt)}</div>
+          <div className="hero-day">
+            {leaveIsPreviousDay
+              ? `${formatDay(plan.leaveAt)} — night before`
+              : `from ${resolveStartLabel(prefs)}`}
+          </div>
         </div>
       </div>
 
       <div className="card timeline">
         <div className="step">
           <div className="step-name">
-            <strong>Leave</strong>
-            <span className="step-sub">{resolveStartLabel(prefs)}</span>
+            <strong>Get ready</strong>
           </div>
-          <div className="step-time">{formatClock(plan.leaveAt)}</div>
+          <div className="step-time">{formatDuration(prefs.getReadyMinutes)}</div>
         </div>
         <div className="step">
           <div className="step-name">

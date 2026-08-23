@@ -1,4 +1,5 @@
 import type { Preferences, TravelMode } from '../types'
+import AddressField from './AddressField'
 
 interface Props {
   prefs: Preferences
@@ -57,15 +58,6 @@ export default function SettingsSheet({ prefs, onChange, onClose }: Props) {
       places: prefs.places.map((p) => (p.id === startPlace.id ? { ...p, address } : p)),
     })
 
-  const pasteStart = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      if (text.trim()) setStartAddress(text.trim())
-    } catch {
-      // Clipboard read denied — the field is still typable.
-    }
-  }
-
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -76,22 +68,12 @@ export default function SettingsSheet({ prefs, onChange, onClose }: Props) {
           </button>
         </div>
 
-        <div className="field">
-          <label htmlFor="start-address">Start from</label>
-          <div className="row">
-            <input
-              id="start-address"
-              type="text"
-              autoComplete="street-address"
-              placeholder="Your home address"
-              value={startPlace?.address ?? ''}
-              onChange={(e) => setStartAddress(e.target.value)}
-            />
-            <button type="button" className="btn-sm btn-ghost" onClick={pasteStart}>
-              Paste
-            </button>
-          </div>
-        </div>
+        <AddressField
+          label="Start from"
+          value={startPlace?.address ?? ''}
+          placeholder="Your home address"
+          onChange={setStartAddress}
+        />
 
         <div className="field">
           <label>How you get there</label>

@@ -1,5 +1,6 @@
 import type { CallDetails, Place } from '../types'
 import { toDateInput } from '../lib/time'
+import AddressField from './AddressField'
 
 interface Props {
   call: CallDetails
@@ -22,15 +23,6 @@ export default function CallForm({ call, places, onChange, onDone }: Props) {
   // Changing where you report invalidates the confirmation you already gave.
   const setAddress = (address: string) =>
     onChange({ ...call, reportAddress: address, addressConfirmed: false })
-
-  const paste = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      if (text.trim()) setAddress(text.trim())
-    } catch {
-      // Clipboard read denied — the field is still typable.
-    }
-  }
 
   const dayChips: Array<{ label: string; value: string }> = [
     { label: 'Today', value: shiftDays(0) },
@@ -77,22 +69,13 @@ export default function CallForm({ call, places, onChange, onDone }: Props) {
         </div>
       </div>
 
-      <div className="field">
-        <label htmlFor="report-address">Report to</label>
-        <div className="row">
-          <input
-            id="report-address"
-            type="text"
-            inputMode="text"
-            autoComplete="street-address"
-            placeholder="Parking lot, basecamp or stage address"
-            value={call.reportAddress}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <button type="button" className="btn-sm btn-ghost" onClick={paste}>
-            Paste
-          </button>
-        </div>
+      <div>
+        <AddressField
+          label="Report to"
+          value={call.reportAddress}
+          placeholder="Parking lot, basecamp or stage"
+          onChange={setAddress}
+        />
         {savedLots.length > 0 && (
           <div className="chips" style={{ marginTop: 2 }}>
             {savedLots.map((place) => (

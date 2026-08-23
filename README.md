@@ -11,14 +11,20 @@ Not department-dependent — the only job detail it needs is when and where.
 
 ## What it tells you
 
-- **Alarm** — the time to actually get up.
-- **Leave / Travel / Arrive / Call** — the chain, so you can see where the time went.
+- **Two alarms** — when to wake up, and when to be out the door. Both are
+  first-class, because the second one is the one you actually miss.
+- **Get ready / Travel / Arrive / Call** — the chain, so you can see where the
+  time went.
 - **On-time likelihood** — a percentage, capped at 99%. Nothing is certain.
 - **A flag when late is possible** — if the pessimistic traffic case lands you
   past call, the card turns amber. If the odds fall below your threshold, red.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
 - **A "right lot?" prompt** — because basecamp is not the stage, and the wrong
   lot is the most common way to be late.
+
+Both address fields autocomplete against Google Places, so "Universal Studios —
+Gate 2" and "Gate 8" come back as separate rows with separate addresses instead
+of one ambiguous string.
 
 ## The late-risk model
 
@@ -53,32 +59,37 @@ Add it to your iPhone home screen from Safari and it runs full-screen.
 
 ### Maps data
 
-Without a key it runs on a mock traffic provider — realistic shape, invented
-distances. The banner under the plan says so.
+Without a key it runs on mock providers — invented distances, and a bundled
+list of real studio lots for autocomplete. The banner under the plan says so.
 
-To go live, enable the **Routes API** on a Google Cloud key and:
+To go live, enable both the **Routes API** and the **Places API (New)** on a
+Google Cloud key and:
 
 ```bash
 cp .env.example .env.local
 # set VITE_GOOGLE_MAPS_API_KEY=...
 ```
 
-No code changes — `createMapsProvider()` picks the live provider when a key is
-present. Note the key ships in the client bundle, so restrict it by HTTP
-referrer in the Google Cloud console.
+No code changes — `createMapsProvider()` and `createPlacesProvider()` both pick
+the live provider when a key is present. Autocomplete passes a session token so
+the keystrokes leading to one pick bill as a single session.
+
+Note the key ships in the client bundle, so restrict it by HTTP referrer in the
+Google Cloud console.
 
 ## Layout
 
 ```
 src/lib/risk.ts        on-time likelihood from the traffic spread
 src/lib/schedule.ts    works the chain backwards; resolves the traffic loop
-src/lib/maps/          provider interface, Google Routes, and the mock
+src/lib/maps/          routing: provider interface, Google Routes, and the mock
+src/lib/places/        autocomplete: same shape, Google Places and a mock
 src/lib/time.ts        clock math and formatting
-src/components/        call form, collapsed summary, plan card, preferences
+src/components/        call form, address field, plan card, preferences
 ```
 
 ```bash
-npm test        # 23 tests over the risk model, scheduling, and time math
+npm test        # 31 tests over risk, scheduling, time math, and place lookup
 npm run build
 ```
 
@@ -89,5 +100,6 @@ npm run build
   port to native.
 - **Non-driving modes get no spread.** Google only accepts a traffic model for
   driving, so transit, bike, and walk fall back to the noise floor.
-- **Addresses are free text.** No autocomplete or geocoding validation yet —
-  hence the "right lot?" confirmation.
+- **Autocomplete suggests, it does not verify.** A picked suggestion is a real
+  place, but nothing checks it is the lot *your* production meant — so the
+  "right lot?" confirmation stays.
