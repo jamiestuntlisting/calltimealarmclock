@@ -19,22 +19,33 @@ function toneFor(plan: Plan, prefs: Preferences): Tone {
 
 function verdictText(plan: Plan, tone: Tone): { headline: string; detail: string } {
   const worst = formatClock(plan.worstCaseArrivalAt)
+  // On transit the downside is a missed connection, not traffic — and saying
+  // "traffic" to someone about to board a train reads as a bug.
+  const cause = plan.travel.missedConnectionMinutes ? 'Miss your connection and' : 'Bad traffic'
+  const verb = plan.travel.missedConnectionMinutes ? "you're at the lot" : 'puts you at the lot'
+
   if (tone === 'bad') {
-    return {
-      headline: 'Leave earlier than this.',
-      detail: `Bad traffic puts you at the lot at ${worst}.`,
-    }
+    return { headline: 'Leave earlier than this.', detail: `${cause} ${verb} at ${worst}.` }
   }
   if (tone === 'warn') {
-    return {
-      headline: 'Late is possible.',
-      detail: `Bad traffic puts you at the lot at ${worst}.`,
-    }
+    return { headline: 'Late is possible.', detail: `${cause} ${verb} at ${worst}.` }
   }
   return {
     headline: 'Buffer holds.',
-    detail: `Even bad traffic gets you there by ${worst}.`,
+    detail: plan.travel.missedConnectionMinutes
+      ? `Even a missed connection gets you there by ${worst}.`
+      : `Even bad traffic gets you there by ${worst}.`,
   }
+}
+
+/** What the Travel row shows under its heading, which differs by mode. */
+function travelDetail(plan: Plan): string {
+  const { missedConnectionMinutes, transitLegs, optimisticMinutes, pessimisticMinutes } = plan.travel
+  if (missedConnectionMinutes) {
+    const next = `next in ${formatDuration(missedConnectionMinutes)}`
+    return transitLegs && transitLegs > 1 ? `${transitLegs} legs — ${next}` : next
+  }
+  return `${formatDuration(optimisticMinutes)}–${formatDuration(pessimisticMinutes)}`
 }
 
 export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props) {
@@ -59,7 +70,9 @@ export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props)
           <div className="hero-day">
             {leaveIsPreviousDay
               ? `${formatDay(plan.leaveAt)} — night before`
-              : `from ${resolveStartLabel(prefs)}`}
+              : plan.travel.scheduledDepartureAt
+                ? 'scheduled departure'
+                : `from ${resolveStartLabel(prefs)}`}
           </div>
         </div>
       </div>
@@ -74,9 +87,7 @@ export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props)
         <div className="step">
           <div className="step-name">
             <strong>Travel</strong>
-            <span className="step-sub">
-              {formatDuration(plan.travel.optimisticMinutes)}–{formatDuration(plan.travel.pessimisticMinutes)}
-            </span>
+            <span className="step-sub">{travelDetail(plan)}</span>
           </div>
           <div className="step-time">{formatDuration(plan.travel.expectedMinutes)}</div>
         </div>
@@ -152,7 +163,7 @@ export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props)
       </div>
 
       {plan.travel.source === 'mock' && (
-        <div className="mock-banner">Estimated traffic — no Maps key configured</div>
+        <div className="mock-banner">Estimated times — no Maps key configured</div>
       )}
     </div>
   )

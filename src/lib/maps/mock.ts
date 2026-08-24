@@ -49,20 +49,62 @@ export class MockMapsProvider implements MapsProvider {
   async estimate(query: TravelQuery): Promise<TravelEstimate> {
     const seed = hashUnit(`${query.origin}->${query.destination}`)
     const distanceKm = 4 + seed * 38
+    const anchor = query.timing.type === 'depart' ? query.timing.at : query.timing.by
     const congestion = query.mode === 'bike' || query.mode === 'walk'
       ? 1
-      : congestionFactor(query.departAt.getHours())
+      : congestionFactor(anchor.getHours())
 
-    const expected = (distanceKm / BASE_SPEED_KPH[query.mode]) * 60 * congestion
+    const expected = Math.max(1, (distanceKm / BASE_SPEED_KPH[query.mode]) * 60 * congestion)
+    const distanceMeters = Math.round(distanceKm * 1000)
+
+    if (query.mode === 'transit') {
+      return this.transitEstimate(query, seed, expected, distanceMeters)
+    }
+
     const spread = expected * spreadFactor(query.mode, congestion)
-
     return {
       optimisticMinutes: Math.max(1, expected - spread),
-      expectedMinutes: Math.max(1, expected),
+      expectedMinutes: expected,
       // Bad traffic has a long right tail; the upside is capped, the downside is not.
       pessimisticMinutes: Math.max(1, expected + spread * 1.8),
-      distanceMeters: Math.round(distanceKm * 1000),
+      distanceMeters,
       source: 'mock',
+    }
+  }
+
+  /**
+   * Transit is schedule-shaped, so the mock imitates that rather than traffic:
+   * a headway that widens off-peak, and a boarding time pinned to the request.
+   */
+  private transitEstimate(
+    query: TravelQuery,
+    seed: number,
+    expected: number,
+    distanceMeters: number,
+  ): TravelEstimate {
+    const anchor = query.timing.type === 'depart' ? query.timing.at : query.timing.by
+    const hour = anchor.getHours()
+    // Rush-hour service is frequent; the small hours are not.
+    const baseHeadway = hour >= 6 && hour < 21 ? 6 : 20
+    const headway = Math.round(baseHeadway + seed * 8)
+    const legs = seed > 0.6 ? 2 : 1
+
+    const scheduledDepartureAt =
+      query.timing.type === 'arrive'
+        ? new Date(query.timing.by.getTime() - expected * 60_000)
+        : query.timing.at
+
+    return {
+      // You cannot beat a timetable, so the scheduled trip is the best case.
+      optimisticMinutes: expected,
+      expectedMinutes: expected,
+      pessimisticMinutes: expected + headway,
+      distanceMeters,
+      source: 'mock',
+      oneSidedSpread: true,
+      scheduledDepartureAt,
+      missedConnectionMinutes: headway,
+      transitLegs: legs,
     }
   }
 }

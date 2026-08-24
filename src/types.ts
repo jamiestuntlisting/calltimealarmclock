@@ -38,8 +38,8 @@ export interface CallDetails {
 }
 
 /**
- * A traffic-aware travel estimate. `optimistic` and `pessimistic` bracket
- * `expected`; the width of that bracket is what drives the late-risk model.
+ * A travel estimate. `optimistic` and `pessimistic` bracket `expected`; the
+ * width of that bracket is what drives the late-risk model.
  */
 export interface TravelEstimate {
   optimisticMinutes: number
@@ -48,14 +48,40 @@ export interface TravelEstimate {
   distanceMeters: number
   /** Which provider produced this, so the UI can say when it is running on mock data. */
   source: 'google' | 'mock'
+  /**
+   * True when the spread only runs one way. Driving can beat its own estimate;
+   * a timetable cannot, so transit's bracket is downside-only and the risk
+   * model reads its width as a single tail rather than two.
+   */
+  oneSidedSpread?: boolean
+  /**
+   * Transit only: the timetable departure this plan is built around, from an
+   * arrival-time query. This is a real train, not a derived clock time.
+   */
+  scheduledDepartureAt?: Date
+  /**
+   * Transit only: minutes lost to the next departure if a connection is
+   * missed — Google's headway. This is what transit risk actually is.
+   */
+  missedConnectionMinutes?: number
+  /** Transit only: how many separate vehicles the trip involves. */
+  transitLegs?: number
 }
+
+/**
+ * Anchor a route to a departure time or to a required arrival. Driving wants
+ * "leave at X, how long?"; transit wants "what gets me there by X?", which is
+ * how the timetable is actually read.
+ */
+export type TravelTiming =
+  | { type: 'depart'; at: Date }
+  | { type: 'arrive'; by: Date }
 
 export interface TravelQuery {
   origin: string
   destination: string
   mode: TravelMode
-  /** When the performer would depart. Traffic estimates are time-of-day sensitive. */
-  departAt: Date
+  timing: TravelTiming
 }
 
 /** The computed plan — everything the performer needs on one screen. */

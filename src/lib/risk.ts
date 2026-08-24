@@ -22,13 +22,18 @@ function floorSigma(expectedMinutes: number): number {
 /**
  * Spread of the travel-time distribution, in minutes.
  *
- * Google returns an optimistic and a pessimistic duration alongside its best
- * guess. Those are not labelled percentiles, but they behave like a roughly
- * 10th/90th bracket, so we back out a standard deviation from their width.
+ * For driving, Google returns an optimistic and a pessimistic duration either
+ * side of its best guess. Those are not labelled percentiles, but they behave
+ * like a roughly 10th/90th bracket, so we halve the width to a single tail
+ * before backing out a standard deviation.
+ *
+ * For transit the bracket is downside-only — you cannot beat the timetable —
+ * so its full width is already one tail and is not halved.
  */
 export function travelSigma(estimate: TravelEstimate): number {
   const spread = estimate.pessimisticMinutes - estimate.optimisticMinutes
-  const fromSpread = spread > 0 ? spread / (2 * Z90) : 0
+  const tails = estimate.oneSidedSpread ? 1 : 2
+  const fromSpread = spread > 0 ? spread / (tails * Z90) : 0
   return Math.max(fromSpread, floorSigma(estimate.expectedMinutes))
 }
 

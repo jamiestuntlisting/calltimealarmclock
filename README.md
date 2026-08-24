@@ -12,7 +12,8 @@ Not department-dependent — the only job detail it needs is when and where.
 ## What it tells you
 
 - **Two alarms** — when to wake up, and when to be out the door. Both are
-  first-class, because the second one is the one you actually miss.
+  first-class, because the second one is the one you actually miss. On transit
+  the second one is a real scheduled departure, not a derived time.
 - **Get ready / Travel / Arrive / Call** — the chain, so you can see where the
   time went.
 - **On-time likelihood** — a percentage, capped at 99%. Nothing is certain.
@@ -28,10 +29,25 @@ of one ambiguous string.
 
 ## The late-risk model
 
-Google's Routes API returns an optimistic, best-guess, and pessimistic duration
-for a drive. Those behave like a rough 10th/90th percentile bracket, so the app
-backs a standard deviation out of their width and treats travel time as normally
-distributed around the best guess.
+Risk means something different per mode, so the app models it differently.
+
+**Driving is traffic.** Google's Routes API returns an optimistic, best-guess,
+and pessimistic duration. Those behave like a rough 10th/90th percentile
+bracket, so the app backs a standard deviation out of their width and treats
+travel time as normally distributed around the best guess.
+
+**Transit is missing your connection.** There is no traffic model for transit —
+but there is something better. Google answers *arrival-time* queries against
+the timetable, so the app asks the question a commuter actually asks ("what
+gets me there by 5:45?") and gets back a real scheduled departure instead of a
+derived clock time. The downside comes from `headway`, the gap until the next
+departure from that stop: miss it and you lose exactly that long.
+
+That makes the transit bracket one-sided — you cannot beat a timetable — so its
+full width is read as a single tail rather than halved into two. The same
+20-minute spread therefore implies twice the deviation it would on a road,
+which is correct: a 20-minute-headway train is genuinely riskier than a drive
+that varies 20 minutes either side of its estimate.
 
 On-time likelihood is then the probability that the real trip fits inside the
 budget between leaving and call time. Two deliberate choices:
@@ -89,7 +105,7 @@ src/components/        call form, address field, plan card, preferences
 ```
 
 ```bash
-npm test        # 31 tests over risk, scheduling, time math, and place lookup
+npm test        # 43 tests over risk, scheduling, transit, time math, and places
 npm run build
 ```
 
@@ -98,8 +114,12 @@ npm run build
 - **No alarm is set for you.** iOS gives the web no way into the Clock app, so
   the app shows the time and you set it. This is the main reason to eventually
   port to native.
-- **Non-driving modes get no spread.** Google only accepts a traffic model for
-  driving, so transit, bike, and walk fall back to the noise floor.
+- **Walking and cycling get no spread.** No traffic model and no timetable, so
+  they fall back to the noise floor. That is roughly right — neither has much
+  variance — but it is a floor, not a measurement.
+- **Transit assumes you make the first train.** The model prices in one missed
+  connection at the worst headway on the route. It does not model a train that
+  is cancelled outright, or a line that is down.
 - **Autocomplete suggests, it does not verify.** A picked suggestion is a real
   place, but nothing checks it is the lot *your* production meant — so the
   "right lot?" confirmation stays.

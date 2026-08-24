@@ -17,29 +17,18 @@ export async function buildPlan(
   provider: MapsProvider,
   now: Date = new Date(),
 ): Promise<Plan> {
-  const origin = resolveStartAddress(prefs)
   const callAt = combineDateAndTime(call.date, call.time)
   const targetArrivalAt = addMinutes(callAt, -prefs.arriveEarlyMinutes)
 
-  let departAt = addMinutes(targetArrivalAt, -INITIAL_TRAVEL_GUESS_MINUTES)
-  let travel: TravelEstimate = await provider.estimate({
-    origin,
-    destination: call.reportAddress,
-    mode: prefs.travelMode,
-    departAt,
-  })
+  const travel =
+    prefs.travelMode === 'transit'
+      ? await estimateByArrival(call, prefs, provider, targetArrivalAt)
+      : await estimateByDeparture(call, prefs, provider, targetArrivalAt)
 
-  for (let pass = 0; pass < REFINEMENT_PASSES; pass++) {
-    departAt = addMinutes(targetArrivalAt, -travel.expectedMinutes)
-    travel = await provider.estimate({
-      origin,
-      destination: call.reportAddress,
-      mode: prefs.travelMode,
-      departAt,
-    })
-  }
+  // Transit hands back a real timetable departure; everything else derives one.
+  const leaveAt =
+    travel.scheduledDepartureAt ?? addMinutes(targetArrivalAt, -travel.expectedMinutes)
 
-  const leaveAt = addMinutes(targetArrivalAt, -travel.expectedMinutes)
   const wakeAt = addMinutes(leaveAt, -prefs.getReadyMinutes)
   const worstCaseArrivalAt = addMinutes(leaveAt, travel.pessimisticMinutes)
 
@@ -58,6 +47,51 @@ export async function buildPlan(
     couldBeLate: worstCaseArrivalAt.getTime() > callAt.getTime(),
     wakeTimeHasPassed: wakeAt.getTime() < now.getTime(),
   }
+}
+
+/**
+ * Transit runs on a timetable, so it answers the question directly: what gets
+ * me there by this time? No iteration — the schedule already knows.
+ */
+async function estimateByArrival(
+  call: CallDetails,
+  prefs: Preferences,
+  provider: MapsProvider,
+  targetArrivalAt: Date,
+): Promise<TravelEstimate> {
+  return provider.estimate({
+    origin: resolveStartAddress(prefs),
+    destination: call.reportAddress,
+    mode: prefs.travelMode,
+    timing: { type: 'arrive', by: targetArrivalAt },
+  })
+}
+
+/** Driving, cycling and walking are solved forwards from a departure time. */
+async function estimateByDeparture(
+  call: CallDetails,
+  prefs: Preferences,
+  provider: MapsProvider,
+  targetArrivalAt: Date,
+): Promise<TravelEstimate> {
+  const query = (departAt: Date) => ({
+    origin: resolveStartAddress(prefs),
+    destination: call.reportAddress,
+    mode: prefs.travelMode,
+    timing: { type: 'depart' as const, at: departAt },
+  })
+
+  let travel = await provider.estimate(
+    query(addMinutes(targetArrivalAt, -INITIAL_TRAVEL_GUESS_MINUTES)),
+  )
+
+  for (let pass = 0; pass < REFINEMENT_PASSES; pass++) {
+    travel = await provider.estimate(
+      query(addMinutes(targetArrivalAt, -travel.expectedMinutes)),
+    )
+  }
+
+  return travel
 }
 
 export function resolveStartAddress(prefs: Preferences): string {

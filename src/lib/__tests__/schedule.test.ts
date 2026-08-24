@@ -75,7 +75,10 @@ describe('buildPlan', () => {
     // One seed lookup plus the refinement passes.
     expect(provider.calls.length).toBe(3)
     const last = provider.calls[provider.calls.length - 1]
-    expect(formatClock(last.departAt)).toBe(formatClock(new Date('2026-09-14T05:00:00')))
+    expect(last.timing.type).toBe('depart')
+    if (last.timing.type === 'depart') {
+      expect(formatClock(last.timing.at)).toBe(formatClock(new Date('2026-09-14T05:00:00')))
+    }
     expect(last.origin).toBe('433 Warren St')
     expect(last.destination).toBe('Base Camp Lot B')
   })

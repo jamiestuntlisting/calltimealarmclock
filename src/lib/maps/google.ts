@@ -10,11 +10,27 @@ const TRAVEL_MODE: Record<TravelMode, string> = {
   walk: 'WALK',
 }
 
-/** Only DRIVE accepts a traffic model, which is where the spread comes from. */
+/** Only DRIVE accepts a traffic model, which is where the driving spread comes from. */
 type TrafficModel = 'OPTIMISTIC' | 'BEST_GUESS' | 'PESSIMISTIC'
 
+const BASE_FIELDS = 'routes.duration,routes.distanceMeters'
+// Transit needs the boarding times and the headway behind each vehicle.
+const TRANSIT_FIELDS = `${BASE_FIELDS},routes.legs.steps.transitDetails`
+
+interface TransitDetails {
+  headway?: string
+  stopDetails?: {
+    departureTime?: string
+    arrivalTime?: string
+  }
+}
+
 interface RoutesResponse {
-  routes?: Array<{ duration?: string; distanceMeters?: number }>
+  routes?: Array<{
+    duration?: string
+    distanceMeters?: number
+    legs?: Array<{ steps?: Array<{ transitDetails?: TransitDetails }> }>
+  }>
 }
 
 /** Routes API durations come back as protobuf strings like "1834s". */
@@ -30,23 +46,20 @@ export class GoogleMapsProvider implements MapsProvider {
   constructor(private readonly apiKey: string) {}
 
   async estimate(query: TravelQuery): Promise<TravelEstimate> {
-    // Traffic models only apply to driving. Everything else gets one lookup,
-    // and its spread is inferred downstream from the noise floor.
-    if (query.mode !== 'drive') {
-      const route = await this.fetchRoute(query, null)
-      return {
-        optimisticMinutes: route.minutes,
-        expectedMinutes: route.minutes,
-        pessimisticMinutes: route.minutes,
-        distanceMeters: route.distanceMeters,
-        source: 'google',
-      }
-    }
+    if (query.mode === 'transit') return this.estimateTransit(query)
+    if (query.mode !== 'drive') return this.estimateFixed(query)
+    return this.estimateDriving(query)
+  }
 
+  /**
+   * Driving risk is traffic, so the spread comes from running the same route
+   * through Google's three traffic models.
+   */
+  private async estimateDriving(query: TravelQuery): Promise<TravelEstimate> {
     const [optimistic, expected, pessimistic] = await Promise.all([
-      this.fetchRoute(query, 'OPTIMISTIC'),
-      this.fetchRoute(query, 'BEST_GUESS'),
-      this.fetchRoute(query, 'PESSIMISTIC'),
+      this.fetchRoute(query, { trafficModel: 'OPTIMISTIC' }),
+      this.fetchRoute(query, { trafficModel: 'BEST_GUESS' }),
+      this.fetchRoute(query, { trafficModel: 'PESSIMISTIC' }),
     ])
 
     return {
@@ -58,19 +71,69 @@ export class GoogleMapsProvider implements MapsProvider {
     }
   }
 
-  private async fetchRoute(query: TravelQuery, trafficModel: TrafficModel | null) {
-    // The Routes API rejects departure times in the past.
-    const departureTime = new Date(Math.max(query.departAt.getTime(), Date.now() + 60_000))
+  /**
+   * Transit risk is not traffic — it is missing a connection. Google answers
+   * arrival-time queries against the timetable, so we ask the question a
+   * commuter actually asks ("what gets me there by call?") and read the
+   * downside off the headway: the wait until the next departure.
+   */
+  private async estimateTransit(query: TravelQuery): Promise<TravelEstimate> {
+    const route = await this.fetchRoute(query, { transit: true })
 
+    const worstHeadway = route.headwaysMinutes.length
+      ? Math.max(...route.headwaysMinutes)
+      : 0
+
+    return {
+      // A timetable cannot be beaten, so the scheduled trip is the best case.
+      optimisticMinutes: route.minutes,
+      expectedMinutes: route.minutes,
+      pessimisticMinutes: route.minutes + worstHeadway,
+      distanceMeters: route.distanceMeters,
+      source: 'google',
+      oneSidedSpread: true,
+      scheduledDepartureAt: route.scheduledDepartureAt ?? undefined,
+      missedConnectionMinutes: worstHeadway || undefined,
+      transitLegs: route.headwaysMinutes.length || undefined,
+    }
+  }
+
+  /** Walking and cycling have no timetable and no traffic model — one lookup. */
+  private async estimateFixed(query: TravelQuery): Promise<TravelEstimate> {
+    const route = await this.fetchRoute(query, {})
+    return {
+      optimisticMinutes: route.minutes,
+      expectedMinutes: route.minutes,
+      pessimisticMinutes: route.minutes,
+      distanceMeters: route.distanceMeters,
+      source: 'google',
+    }
+  }
+
+  private async fetchRoute(
+    query: TravelQuery,
+    options: { trafficModel?: TrafficModel; transit?: boolean },
+  ) {
     const body: Record<string, unknown> = {
       origin: { address: query.origin },
       destination: { address: query.destination },
       travelMode: TRAVEL_MODE[query.mode],
-      departureTime: departureTime.toISOString(),
     }
-    if (trafficModel) {
+
+    if (query.timing.type === 'arrive') {
+      // Transit is the only mode Google will solve backwards from an arrival.
+      body.arrivalTime = query.timing.by.toISOString()
+    } else {
+      // Departure times in the past are rejected for every mode but transit.
+      const earliest = query.mode === 'transit' ? 0 : Date.now() + 60_000
+      body.departureTime = new Date(
+        Math.max(query.timing.at.getTime(), earliest),
+      ).toISOString()
+    }
+
+    if (options.trafficModel) {
       body.routingPreference = 'TRAFFIC_AWARE_OPTIMAL'
-      body.trafficModel = trafficModel
+      body.trafficModel = options.trafficModel
     }
 
     const response = await fetch(ROUTES_ENDPOINT, {
@@ -78,7 +141,7 @@ export class GoogleMapsProvider implements MapsProvider {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': this.apiKey,
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+        'X-Goog-FieldMask': options.transit ? TRANSIT_FIELDS : BASE_FIELDS,
       },
       body: JSON.stringify(body),
     })
@@ -90,14 +153,33 @@ export class GoogleMapsProvider implements MapsProvider {
     }
 
     const data = (await response.json()) as RoutesResponse
-    const seconds = parseSeconds(data.routes?.[0]?.duration)
+    const route = data.routes?.[0]
+    const seconds = parseSeconds(route?.duration)
     if (seconds === null) {
-      throw new TravelLookupError('No route found between those two addresses.')
+      throw new TravelLookupError(
+        query.mode === 'transit'
+          ? 'No transit route found — check the addresses, or that transit runs at that hour.'
+          : 'No route found between those two addresses.',
+      )
     }
+
+    const transitSteps = (route?.legs ?? [])
+      .flatMap((leg) => leg.steps ?? [])
+      .map((step) => step.transitDetails)
+      .filter((details): details is TransitDetails => Boolean(details))
+
+    const headwaysMinutes = transitSteps
+      .map((details) => parseSeconds(details.headway))
+      .filter((s): s is number => s !== null)
+      .map((s) => s / 60)
+
+    const firstDeparture = transitSteps[0]?.stopDetails?.departureTime
 
     return {
       minutes: seconds / 60,
-      distanceMeters: data.routes?.[0]?.distanceMeters ?? 0,
+      distanceMeters: route?.distanceMeters ?? 0,
+      headwaysMinutes,
+      scheduledDepartureAt: firstDeparture ? new Date(firstDeparture) : null,
     }
   }
 }
