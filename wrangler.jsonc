@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "calltime-alarm-clock",
+  "name": "calltimealarmclock",
   "compatibility_date": "2026-08-24",
 
   // A pure static site: no Worker script, so no `main` and no ASSETS binding.

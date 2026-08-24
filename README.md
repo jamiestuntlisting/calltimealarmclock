@@ -107,14 +107,14 @@ npx wrangler login    # once
 npm run deploy        # builds, then deploys
 ```
 
-That prints the live URL — `calltime-alarm-clock.<your-subdomain>.workers.dev`.
+That prints the live URL — `calltimealarmclock.<your-subdomain>.workers.dev`.
 Open it in Safari on the phone and Add to Home Screen.
 
 Or connect the repo in the dashboard (Workers & Pages → Create application →
 Import a repository) and skip the local toolchain entirely — Cloudflare builds
 it. Build command `npm run build`, deploy command `npx wrangler deploy`. Two
 things to get right: the Worker name in the dashboard must match `name` in
-`wrangler.jsonc` (`calltime-alarm-clock`) or the build fails, and Branch
+`wrangler.jsonc` (`calltimealarmclock`) or the build fails, and Branch
 control defaults to the repo's default branch — point it at the branch you
 actually want deployed.
 
