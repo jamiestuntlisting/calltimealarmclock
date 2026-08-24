@@ -39,6 +39,24 @@ interface RoutesResponse {
   }>
 }
 
+/**
+ * Google says exactly what is wrong in the response body — which referrer was
+ * blocked, which API is not enabled on the key. Surfacing the status code
+ * alone throws away the only useful part of the answer.
+ */
+async function describeFailure(response: Response, api: string): Promise<string> {
+  let detail = ''
+  try {
+    const body = (await response.json()) as { error?: { message?: string } }
+    detail = body.error?.message ?? ''
+  } catch {
+    // Non-JSON error body; the status code is all we have.
+  }
+  return detail
+    ? `Google ${api} API: ${detail}`
+    : `Google ${api} API returned ${response.status}.`
+}
+
 /** Routes API durations come back as protobuf strings like "1834s". */
 function parseSeconds(duration: string | undefined): number | null {
   if (!duration) return null
@@ -156,9 +174,7 @@ export class GoogleMapsProvider implements MapsProvider {
     })
 
     if (!response.ok) {
-      throw new TravelLookupError(
-        `Google Routes API returned ${response.status}. Check the key and that Routes API is enabled.`,
-      )
+      throw new TravelLookupError(await describeFailure(response, 'Routes'))
     }
 
     const data = (await response.json()) as RoutesResponse
