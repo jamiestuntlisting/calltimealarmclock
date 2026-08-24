@@ -76,19 +76,28 @@ Without a key it runs on mock providers — invented distances, and a bundled
 list of real studio lots for autocomplete. The banner under the plan says so.
 
 To go live, enable both the **Routes API** and the **Places API (New)** on a
-Google Cloud key and:
+Google Cloud key.
+
+Locally:
 
 ```bash
 cp .env.example .env.local
 # set VITE_GOOGLE_MAPS_API_KEY=...
 ```
 
+On Cloudflare, it must go in **Settings → Build → Build variables and secrets**,
+not Settings → Variables & Secrets. Vite inlines `VITE_*` values into the bundle
+at build time, so a runtime variable arrives too late to be read.
+
 No code changes — `createMapsProvider()` and `createPlacesProvider()` both pick
 the live provider when a key is present. Autocomplete passes a session token so
 the keystrokes leading to one pick bill as a single session.
 
-Note the key ships in the client bundle, so restrict it by HTTP referrer in the
-Google Cloud console.
+The key ships inside the client bundle either way — that is how a browser-side
+Maps call works, and marking it secret in a dashboard hides it from the
+dashboard, not from anyone reading the page source. The protection that
+actually holds is an **HTTP referrer restriction** on the key in Google Cloud,
+locked to the deployed hostname.
 
 ## Deploying
 

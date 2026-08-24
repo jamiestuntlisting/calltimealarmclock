@@ -185,8 +185,6 @@ button:active { opacity: 0.7; }
 .verdict-text { font-size: 14px; line-height: 1.35; }
 .verdict-text small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
 
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
 .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 28px 16px; line-height: 1.5; }
 
 .note { font-size: 12.5px; color: var(--muted); }
@@ -326,3 +324,29 @@ button:active { opacity: 0.7; }
 
 .alarm .hero-time { font-size: 38px; letter-spacing: -1px; margin: 4px 0 3px; }
 .alarm .hero-day { font-size: 12px; }
+
+/* ---- Call time leads; the date is a fallback for anything the chips miss ---- */
+input.input-hero {
+  font-size: 26px;
+  font-weight: 650;
+  padding: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+input.input-quiet {
+  font-size: 13px;
+  padding: 7px 10px;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+input.input-quiet:hover { border-color: var(--line); }
+
+/* Single full-width action now that "See the lot" is gone. */
+.action-link {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 13px 14px;
+  border-radius: 10px;
+}

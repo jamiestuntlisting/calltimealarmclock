@@ -50,25 +50,23 @@ export default function CallForm({ call, onChange, onDone }: Props) {
         ))}
       </div>
 
-      <div className="grid-2">
-        <div className="field">
-          <label htmlFor="call-date">Date</label>
-          <input
-            id="call-date"
-            type="date"
-            value={call.date}
-            onChange={(e) => set('date', e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="call-time">Call time</label>
-          <input
-            id="call-time"
-            type="time"
-            value={call.time}
-            onChange={(e) => set('time', e.target.value)}
-          />
-        </div>
+      <div className="field">
+        <label htmlFor="call-time">Call time</label>
+        <input
+          id="call-time"
+          className="input-hero"
+          type="time"
+          value={call.time}
+          onChange={(e) => set('time', e.target.value)}
+        />
+        <input
+          id="call-date"
+          className="input-quiet"
+          type="date"
+          aria-label="Call date"
+          value={call.date}
+          onChange={(e) => set('date', e.target.value)}
+        />
       </div>
 
       <div>
@@ -95,17 +93,6 @@ export default function CallForm({ call, onChange, onDone }: Props) {
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="field">
-        <label htmlFor="call-note">Note</label>
-        <input
-          id="call-note"
-          type="text"
-          placeholder="Gate 3, ask for transpo"
-          value={call.note}
-          onChange={(e) => set('note', e.target.value)}
-        />
       </div>
 
       {onDone && (

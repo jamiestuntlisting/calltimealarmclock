@@ -16,7 +16,6 @@ const call: CallDetails = {
   date: '2026-09-14',
   time: '06:00',
   reportAddress: 'Base Camp Lot B',
-  note: '',
   travelMode: 'drive',
 }
 

@@ -20,9 +20,3 @@ export function googleMapsDirectionsUrl(destination: string, mode: TravelMode): 
   })
   return `https://www.google.com/maps/dir/?${params.toString()}`
 }
-
-/** Drops a pin on the report address so the lot can be eyeballed before leaving. */
-export function googleMapsPlaceUrl(address: string): string {
-  const params = new URLSearchParams({ api: '1', query: address })
-  return `https://www.google.com/maps/search/?${params.toString()}`
-}

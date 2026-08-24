@@ -30,8 +30,6 @@ export interface CallDetails {
   time: string
   /** Where you physically report — often a parking lot or basecamp, not the set. */
   reportAddress: string
-  /** Free text: gate number, lot name, production, whatever helps. */
-  note: string
   /**
    * How you are getting there. Lives on the call rather than in preferences
    * because the same person drives to one job and takes the train to the next.

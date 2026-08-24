@@ -19,7 +19,6 @@ export function defaultCallDetails(now: Date = new Date()): CallDetails {
     date: toDateInput(tomorrow),
     time: '06:00',
     reportAddress: '',
-    note: '',
     travelMode: 'drive',
   }
 }

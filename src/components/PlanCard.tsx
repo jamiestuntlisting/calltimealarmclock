@@ -1,6 +1,6 @@
 import type { CallDetails, Plan, Preferences } from '../types'
 import { formatClock, formatDay, formatDuration, isDifferentDay } from '../lib/time'
-import { googleMapsDirectionsUrl, googleMapsPlaceUrl } from '../lib/deeplink'
+import { googleMapsDirectionsUrl } from '../lib/deeplink'
 import { resolveStartLabel } from '../lib/schedule'
 
 interface Props {
@@ -100,7 +100,6 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         <div className="step">
           <div className="step-name">
             <strong>Call</strong>
-            {call.note.trim() && <span className="step-sub">{call.note.trim()}</span>}
           </div>
           <div className="step-time">{formatClock(plan.callAt)}</div>
         </div>
@@ -118,33 +117,14 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         <div className="error">That alarm time has already passed.</div>
       )}
 
-      <div className="actions">
-        <a
-          className="btn-accent"
-          style={{ textDecoration: 'none', textAlign: 'center', padding: '11px 14px', borderRadius: 10 }}
-          href={googleMapsDirectionsUrl(call.reportAddress, call.travelMode)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Directions
-        </a>
-        <a
-          className="btn-ghost"
-          style={{
-            textDecoration: 'none',
-            textAlign: 'center',
-            padding: '11px 14px',
-            borderRadius: 10,
-            border: '1px solid var(--line)',
-            color: 'var(--text)',
-          }}
-          href={googleMapsPlaceUrl(call.reportAddress)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          See the lot
-        </a>
-      </div>
+      <a
+        className="btn-accent action-link"
+        href={googleMapsDirectionsUrl(call.reportAddress, call.travelMode)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Get directions
+      </a>
 
       {plan.travel.source === 'mock' && (
         <div className="mock-banner">Estimated times — no Maps key configured</div>
