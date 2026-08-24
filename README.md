@@ -93,6 +93,22 @@ the keystrokes leading to one pick bill as a single session.
 Note the key ships in the client bundle, so restrict it by HTTP referrer in the
 Google Cloud console.
 
+## Deploying
+
+Static site on Workers, no Worker script:
+
+```bash
+npx wrangler login    # once
+npm run deploy        # builds, then deploys
+```
+
+That prints the live URL — `calltime-alarm-clock.<your-subdomain>.workers.dev`.
+Open it in Safari on the phone and Add to Home Screen.
+
+Or point the Cloudflare dashboard at this repo (Workers → Create → Import a
+repository) with build command `npm run build` and output directory `dist`,
+which redeploys on every push.
+
 ## Layout
 
 ```
