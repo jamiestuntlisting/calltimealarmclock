@@ -7,7 +7,6 @@ interface Props {
   plan: Plan
   call: CallDetails
   prefs: Preferences
-  onConfirmAddress: () => void
 }
 
 type Tone = 'good' | 'warn' | 'bad'
@@ -48,7 +47,7 @@ function travelDetail(plan: Plan): string {
   return `${formatDuration(optimisticMinutes)}–${formatDuration(pessimisticMinutes)}`
 }
 
-export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props) {
+export default function PlanCard({ plan, call, prefs }: Props) {
   const tone = toneFor(plan, prefs)
   const verdict = verdictText(plan, tone)
   const wakeIsPreviousDay = isDifferentDay(plan.wakeAt, plan.callAt)
@@ -119,26 +118,11 @@ export default function PlanCard({ plan, call, prefs, onConfirmAddress }: Props)
         <div className="error">That alarm time has already passed.</div>
       )}
 
-      <div className={`addr-confirm ${call.addressConfirmed ? 'done' : ''}`}>
-        <div style={{ flex: 1 }}>
-          {call.addressConfirmed ? (
-            <>Reporting to {call.reportAddress}</>
-          ) : (
-            <>Right lot? {call.reportAddress}</>
-          )}
-        </div>
-        {!call.addressConfirmed && (
-          <button type="button" className="btn-sm" onClick={onConfirmAddress}>
-            Yes
-          </button>
-        )}
-      </div>
-
       <div className="actions">
         <a
           className="btn-accent"
           style={{ textDecoration: 'none', textAlign: 'center', padding: '11px 14px', borderRadius: 10 }}
-          href={googleMapsDirectionsUrl(call.reportAddress, prefs.travelMode)}
+          href={googleMapsDirectionsUrl(call.reportAddress, call.travelMode)}
           target="_blank"
           rel="noreferrer"
         >

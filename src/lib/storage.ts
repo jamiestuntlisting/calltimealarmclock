@@ -9,7 +9,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   places: [{ id: 'home', label: 'Home', address: '' }],
   getReadyMinutes: 30,
   arriveEarlyMinutes: 15,
-  travelMode: 'drive',
   onTimeThreshold: 0.9,
 }
 
@@ -21,7 +20,7 @@ export function defaultCallDetails(now: Date = new Date()): CallDetails {
     time: '06:00',
     reportAddress: '',
     note: '',
-    addressConfirmed: false,
+    travelMode: 'drive',
   }
 }
 
@@ -54,13 +53,9 @@ export function savePreferences(prefs: Preferences): void {
   write(PREFS_KEY, prefs)
 }
 
-/**
- * The call details carry over between sessions, minus the confirmation — a new
- * day means the address has to be eyeballed again.
- */
+/** The call details carry over between sessions, so a repeat job needs no retyping. */
 export function loadCallDetails(): CallDetails {
-  const stored = read(CALL_KEY, defaultCallDetails())
-  return { ...stored, addressConfirmed: false }
+  return read(CALL_KEY, defaultCallDetails())
 }
 
 export function saveCallDetails(call: CallDetails): void {

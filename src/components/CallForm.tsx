@@ -1,10 +1,16 @@
-import type { CallDetails, Place } from '../types'
+import type { CallDetails, TravelMode } from '../types'
 import { toDateInput } from '../lib/time'
 import AddressField from './AddressField'
 
+const MODES: Array<{ value: TravelMode; label: string }> = [
+  { value: 'drive', label: 'Drive' },
+  { value: 'transit', label: 'Transit' },
+  { value: 'bike', label: 'Bike' },
+  { value: 'walk', label: 'Walk' },
+]
+
 interface Props {
   call: CallDetails
-  places: Place[]
   onChange: (next: CallDetails) => void
   /** Present only once there is a plan to collapse back to. */
   onDone?: () => void
@@ -16,21 +22,17 @@ function shiftDays(days: number): string {
   return toDateInput(d)
 }
 
-export default function CallForm({ call, places, onChange, onDone }: Props) {
+export default function CallForm({ call, onChange, onDone }: Props) {
   const set = <K extends keyof CallDetails>(key: K, value: CallDetails[K]) =>
     onChange({ ...call, [key]: value })
 
-  // Changing where you report invalidates the confirmation you already gave.
-  const setAddress = (address: string) =>
-    onChange({ ...call, reportAddress: address, addressConfirmed: false })
+  const setAddress = (address: string) => set('reportAddress', address)
 
   const dayChips: Array<{ label: string; value: string }> = [
     { label: 'Today', value: shiftDays(0) },
     { label: 'Tomorrow', value: shiftDays(1) },
     { label: 'In 2 days', value: shiftDays(2) },
   ]
-
-  const savedLots = places.filter((p) => p.address.trim() !== '')
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -76,21 +78,23 @@ export default function CallForm({ call, places, onChange, onDone }: Props) {
           placeholder="Parking lot, basecamp or stage"
           onChange={setAddress}
         />
-        {savedLots.length > 0 && (
-          <div className="chips" style={{ marginTop: 2 }}>
-            {savedLots.map((place) => (
-              <button
-                key={place.id}
-                type="button"
-                className="chip"
-                aria-pressed={call.reportAddress === place.address}
-                onClick={() => setAddress(place.address)}
-              >
-                {place.label}
-              </button>
-            ))}
-          </div>
-        )}
+      </div>
+
+      <div className="field">
+        <label>Getting there</label>
+        <div className="chips">
+          {MODES.map((mode) => (
+            <button
+              key={mode.value}
+              type="button"
+              className="chip"
+              aria-pressed={call.travelMode === mode.value}
+              onClick={() => set('travelMode', mode.value)}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="field">

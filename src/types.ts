@@ -18,7 +18,6 @@ export interface Preferences {
   places: Place[]
   getReadyMinutes: number
   arriveEarlyMinutes: number
-  travelMode: TravelMode
   /** Minimum acceptable on-time likelihood before the plan is flagged. */
   onTimeThreshold: number
 }
@@ -33,8 +32,11 @@ export interface CallDetails {
   reportAddress: string
   /** Free text: gate number, lot name, production, whatever helps. */
   note: string
-  /** Set once the performer has eyeballed the address and confirmed it. */
-  addressConfirmed: boolean
+  /**
+   * How you are getting there. Lives on the call rather than in preferences
+   * because the same person drives to one job and takes the train to the next.
+   */
+  travelMode: TravelMode
 }
 
 /**

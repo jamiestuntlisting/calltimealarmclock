@@ -9,7 +9,6 @@ const prefs: Preferences = {
   places: [{ id: 'home', label: 'Home', address: '433 Warren St' }],
   getReadyMinutes: 30,
   arriveEarlyMinutes: 15,
-  travelMode: 'drive',
   onTimeThreshold: 0.9,
 }
 
@@ -18,7 +17,7 @@ const call: CallDetails = {
   time: '06:00',
   reportAddress: 'Base Camp Lot B',
   note: '',
-  addressConfirmed: true,
+  travelMode: 'drive',
 }
 
 /** Fixed 45-minute trip, so the arithmetic is checkable by hand. */
@@ -100,5 +99,27 @@ describe('buildPlan', () => {
     const short = await buildPlan(call, prefs, new FixedProvider(fixed(15, 20, 30)), NOW)
     const long = await buildPlan(call, prefs, new FixedProvider(fixed(80, 90, 110)), NOW)
     expect(long.wakeAt.getTime()).toBeLessThan(short.wakeAt.getTime())
+  })
+})
+
+describe('travel mode', () => {
+  it('routes by the mode on the call, not a saved preference', async () => {
+    const provider = new FixedProvider(fixed(35, 45, 65))
+    await buildPlan({ ...call, travelMode: 'bike' }, prefs, provider, NOW)
+    expect(provider.calls.every((q) => q.mode === 'bike')).toBe(true)
+  })
+
+  it('lets the same person drive one job and take transit to the next', async () => {
+    const driving = new FixedProvider(fixed(35, 45, 65))
+    await buildPlan({ ...call, travelMode: 'drive' }, prefs, driving, NOW)
+
+    const transit = new FixedProvider(fixed(45, 45, 60))
+    await buildPlan({ ...call, travelMode: 'transit' }, prefs, transit, NOW)
+
+    expect(driving.calls[0].mode).toBe('drive')
+    expect(transit.calls[0].mode).toBe('transit')
+    // Transit asks the timetable; driving iterates departure times.
+    expect(transit.calls[0].timing.type).toBe('arrive')
+    expect(driving.calls[0].timing.type).toBe('depart')
   })
 })

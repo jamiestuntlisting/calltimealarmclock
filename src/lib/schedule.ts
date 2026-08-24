@@ -21,7 +21,7 @@ export async function buildPlan(
   const targetArrivalAt = addMinutes(callAt, -prefs.arriveEarlyMinutes)
 
   const travel =
-    prefs.travelMode === 'transit'
+    call.travelMode === 'transit'
       ? await estimateByArrival(call, prefs, provider, targetArrivalAt)
       : await estimateByDeparture(call, prefs, provider, targetArrivalAt)
 
@@ -62,7 +62,7 @@ async function estimateByArrival(
   return provider.estimate({
     origin: resolveStartAddress(prefs),
     destination: call.reportAddress,
-    mode: prefs.travelMode,
+    mode: call.travelMode,
     timing: { type: 'arrive', by: targetArrivalAt },
   })
 }
@@ -77,7 +77,7 @@ async function estimateByDeparture(
   const query = (departAt: Date) => ({
     origin: resolveStartAddress(prefs),
     destination: call.reportAddress,
-    mode: prefs.travelMode,
+    mode: call.travelMode,
     timing: { type: 'depart' as const, at: departAt },
   })
 

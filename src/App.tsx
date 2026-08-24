@@ -83,7 +83,6 @@ export default function App() {
       ) : (
         <CallForm
           call={call}
-          places={prefs.places}
           onChange={setCall}
           onDone={plan ? () => setEditingCall(false) : undefined}
         />
@@ -102,12 +101,7 @@ export default function App() {
       {ready && !plan && !error && <div className="empty">Working out the commute…</div>}
 
       {plan && (
-        <PlanCard
-          plan={plan}
-          call={call}
-          prefs={prefs}
-          onConfirmAddress={() => setCall({ ...call, addressConfirmed: true })}
-        />
+        <PlanCard plan={plan} call={call} prefs={prefs} />
       )}
 
       {settingsOpen && (

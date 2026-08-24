@@ -1,4 +1,4 @@
-import type { Preferences, TravelMode } from '../types'
+import type { Preferences } from '../types'
 import AddressField from './AddressField'
 
 interface Props {
@@ -6,13 +6,6 @@ interface Props {
   onChange: (next: Preferences) => void
   onClose: () => void
 }
-
-const MODES: Array<{ value: TravelMode; label: string }> = [
-  { value: 'drive', label: 'Drive' },
-  { value: 'transit', label: 'Transit' },
-  { value: 'bike', label: 'Bike' },
-  { value: 'walk', label: 'Walk' },
-]
 
 function Stepper({
   label,
@@ -74,23 +67,6 @@ export default function SettingsSheet({ prefs, onChange, onClose }: Props) {
           placeholder="Your home address"
           onChange={setStartAddress}
         />
-
-        <div className="field">
-          <label>How you get there</label>
-          <div className="chips">
-            {MODES.map((mode) => (
-              <button
-                key={mode.value}
-                type="button"
-                className="chip"
-                aria-pressed={prefs.travelMode === mode.value}
-                onClick={() => set('travelMode', mode.value)}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <Stepper
           label="Time to get ready"

@@ -4,7 +4,7 @@ Work backwards from a call time to the alarm you actually need.
 
 You enter a call time and the address you report to. The app already knows
 where you start from, how long you take to get ready, and how early you like
-to be standing there. It routes the commute with live traffic, works the whole
+to be standing there — set once, kept on the device. It routes the commute with live traffic, works the whole
 chain backwards, and gives you one screen you can screenshot.
 
 Not department-dependent — the only job detail it needs is when and where.
@@ -20,9 +20,6 @@ Not department-dependent — the only job detail it needs is when and where.
 - **A flag when late is possible** — if the pessimistic traffic case lands you
   past call, the card turns amber. If the odds fall below your threshold, red.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
-- **A "right lot?" prompt** — because basecamp is not the stage, and the wrong
-  lot is the most common way to be late.
-
 Both address fields autocomplete against Google Places, so "Universal Studios —
 Gate 2" and "Gate 8" come back as separate rows with separate addresses instead
 of one ambiguous string.
@@ -146,5 +143,7 @@ npm run build
   connection at the worst headway on the route. It does not model a train that
   is cancelled outright, or a line that is down.
 - **Autocomplete suggests, it does not verify.** A picked suggestion is a real
-  place, but nothing checks it is the lot *your* production meant — so the
-  "right lot?" confirmation stays.
+  place, but nothing checks it is the lot *your* production meant.
+- **Preferences live on the device.** They are in `localStorage`, so they are
+  per-browser and do not follow you to a new phone. Clearing site data clears
+  them. There is no account, which is also why there is nothing to sign into.

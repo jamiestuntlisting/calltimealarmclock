@@ -11,7 +11,6 @@ const basePrefs: Preferences = {
   places: [{ id: 'home', label: 'Home', address: '433 Warren St, Brooklyn NY' }],
   getReadyMinutes: 30,
   arriveEarlyMinutes: 15,
-  travelMode: 'transit',
   onTimeThreshold: 0.9,
 }
 
@@ -20,7 +19,7 @@ const call: CallDetails = {
   time: '06:00',
   reportAddress: 'Silvercup Studios, Queens NY',
   note: '',
-  addressConfirmed: true,
+  travelMode: 'transit',
 }
 
 const NOW = new Date('2026-09-13T12:00:00')
