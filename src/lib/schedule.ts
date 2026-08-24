@@ -1,5 +1,6 @@
 import type { CallDetails, Plan, Preferences, TravelEstimate } from '../types'
 import type { MapsProvider } from './maps'
+import type { ConditionsProvider } from './conditions'
 import { onTimeLikelihood } from './risk'
 import { addMinutes, combineDateAndTime, minutesBetween } from './time'
 
@@ -16,6 +17,7 @@ export async function buildPlan(
   prefs: Preferences,
   provider: MapsProvider,
   now: Date = new Date(),
+  conditionsProvider?: ConditionsProvider,
 ): Promise<Plan> {
   const callAt = combineDateAndTime(call.date, call.time)
   const targetArrivalAt = addMinutes(callAt, -prefs.arriveEarlyMinutes)
@@ -36,6 +38,12 @@ export async function buildPlan(
   // the early buffer — being "late" means missing call, not missing the buffer.
   const budgetMinutes = minutesBetween(leaveAt, callAt)
 
+  // Conditions are garnish: never let a forecast failure cost you the alarm.
+  const conditions =
+    conditionsProvider && travel.destination
+      ? await conditionsProvider.forecast(travel.destination, callAt).catch(() => null)
+      : null
+
   return {
     callAt,
     targetArrivalAt,
@@ -46,6 +54,7 @@ export async function buildPlan(
     onTimeLikelihood: onTimeLikelihood(travel, budgetMinutes),
     couldBeLate: worstCaseArrivalAt.getTime() > callAt.getTime(),
     wakeTimeHasPassed: wakeAt.getTime() < now.getTime(),
+    conditions: conditions ?? undefined,
   }
 }
 

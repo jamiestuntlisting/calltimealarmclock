@@ -350,3 +350,27 @@ input.input-quiet:hover { border-color: var(--line); }
   padding: 13px 14px;
   border-radius: 10px;
 }
+
+/* ---- Conditions at the lot at call time: one row, never two ---- */
+.conditions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+}
+
+.conditions-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.conditions-temp { font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.conditions-summary { font-size: 14px; color: var(--muted); }
+.conditions-rain { font-size: 12.5px; color: var(--muted); }
+
+.pollen { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+/* Only a reading worth acting on gets colour. */
+.pollen-0, .pollen-1, .pollen-2 { color: var(--muted); }
+.pollen-3 { color: var(--warn); }
+.pollen-4, .pollen-5 { color: var(--bad); }

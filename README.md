@@ -20,6 +20,8 @@ Not department-dependent — the only job detail it needs is when and where.
 - **A flag when late is possible** — if the pessimistic traffic case lands you
   past call, the card turns amber. If the odds fall below your threshold, red.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
+- **Weather and pollen at the lot, at call time** — not what it is like at
+  home now. Pollen is coloured only once it is high enough to act on.
 Both address fields autocomplete against Google Places, so "Universal Studios —
 Gate 2" and "Gate 8" come back as separate rows with separate addresses instead
 of one ambiguous string.
@@ -75,8 +77,8 @@ Add it to your iPhone home screen from Safari and it runs full-screen.
 Without a key it runs on mock providers — invented distances, and a bundled
 list of real studio lots for autocomplete. The banner under the plan says so.
 
-To go live, enable both the **Routes API** and the **Places API (New)** on a
-Google Cloud key.
+To go live, enable **Routes API**, **Places API (New)**, **Weather API** and
+**Pollen API** on a Google Cloud key. All four run off the same key.
 
 Locally:
 
@@ -128,6 +130,7 @@ actually want deployed.
 
 ```
 src/lib/risk.ts        on-time likelihood from the traffic spread
+src/lib/conditions/    weather and pollen at the lot at call time
 src/lib/schedule.ts    works the chain backwards; resolves the traffic loop
 src/lib/maps/          routing: provider interface, Google Routes, and the mock
 src/lib/places/        autocomplete: same shape, Google Places and a mock
@@ -148,6 +151,9 @@ npm run build
 - **Walking and cycling get no spread.** No traffic model and no timetable, so
   they fall back to the noise floor. That is roughly right — neither has much
   variance — but it is a floor, not a measurement.
+- **Conditions are best-effort.** Weather reaches 240 hours out and pollen 5
+  days; past that the strip simply does not render. A forecast failure is
+  swallowed rather than surfaced — the alarm is the product.
 - **Transit assumes you make the first train.** The model prices in one missed
   connection at the worst headway on the route. It does not model a train that
   is cancelled outright, or a line that is down.

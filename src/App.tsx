@@ -3,6 +3,7 @@ import CallForm from './components/CallForm'
 import CallSummary from './components/CallSummary'
 import PlanCard from './components/PlanCard'
 import SettingsSheet from './components/SettingsSheet'
+import { createConditionsProvider } from './lib/conditions'
 import { createMapsProvider } from './lib/maps'
 import { buildPlan, resolveStartAddress } from './lib/schedule'
 import {
@@ -27,6 +28,7 @@ export default function App() {
   const [editingCall, setEditingCall] = useState(() => call.reportAddress.trim() === '')
 
   const provider = useMemo(() => createMapsProvider(), [])
+  const conditions = useMemo(() => createConditionsProvider(), [])
   const startAddress = resolveStartAddress(prefs)
   const ready = startAddress.trim() !== '' && call.reportAddress.trim() !== ''
 
@@ -52,7 +54,7 @@ export default function App() {
     const id = ++requestId.current
     const timer = setTimeout(async () => {
       try {
-        const next = await buildPlan(call, prefs, provider)
+        const next = await buildPlan(call, prefs, provider, new Date(), conditions)
         // A newer lookup started while this one was in flight.
         if (id === requestId.current) {
           setPlan(next)
@@ -67,7 +69,7 @@ export default function App() {
     }, LOOKUP_DEBOUNCE_MS)
 
     return () => clearTimeout(timer)
-  }, [call, prefs, provider, ready])
+  }, [call, prefs, provider, conditions, ready])
 
   return (
     <div className="app">

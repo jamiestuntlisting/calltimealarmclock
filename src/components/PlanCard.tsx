@@ -105,6 +105,23 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         </div>
       </div>
 
+      {plan.conditions && (
+        <div className="conditions">
+          <div className="conditions-main">
+            <span className="conditions-temp">{plan.conditions.temperatureF}°</span>
+            <span className="conditions-summary">{plan.conditions.summary}</span>
+            {plan.conditions.precipitationChance >= 20 && (
+              <span className="conditions-rain">{plan.conditions.precipitationChance}% rain</span>
+            )}
+          </div>
+          {plan.conditions.pollen && (
+            <div className={`pollen pollen-${Math.min(5, plan.conditions.pollen.index)}`}>
+              {plan.conditions.pollen.type} pollen · {plan.conditions.pollen.category}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className={`verdict ${tone}`}>
         <div className="verdict-pct">{Math.round(plan.onTimeLikelihood * 100)}%</div>
         <div className="verdict-text">

@@ -66,6 +66,39 @@ export interface TravelEstimate {
   missedConnectionMinutes?: number
   /** Transit only: how many separate vehicles the trip involves. */
   transitLegs?: number
+  /**
+   * Where the route actually ends, as coordinates. Comes free with the routing
+   * call and saves a separate geocoding request for weather and pollen.
+   */
+  destination?: LatLng
+}
+
+export interface LatLng {
+  latitude: number
+  longitude: number
+}
+
+/**
+ * What it will be like standing at the lot at call time — not what it is like
+ * at home now. Absent when the call is further out than the forecast reaches.
+ */
+export interface Conditions {
+  temperatureF: number
+  /** Short description, e.g. "Light rain". */
+  summary: string
+  /** 0-100. */
+  precipitationChance: number
+  pollen?: PollenReading
+  source: 'google' | 'mock'
+}
+
+export interface PollenReading {
+  /** Universal Pollen Index, 0-5. */
+  index: number
+  /** Google's own wording for the index, e.g. "High". */
+  category: string
+  /** Which of tree / grass / weed is driving it. */
+  type: string
 }
 
 /**
@@ -99,4 +132,6 @@ export interface Plan {
   couldBeLate: boolean
   /** True when the wake time has already passed. */
   wakeTimeHasPassed: boolean
+  /** Weather and pollen at the lot at call time, when the forecast reaches. */
+  conditions?: Conditions
 }

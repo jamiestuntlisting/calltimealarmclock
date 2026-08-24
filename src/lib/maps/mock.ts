@@ -11,6 +11,12 @@ function hashUnit(input: string): number {
   return ((hash >>> 0) % 100000) / 100000
 }
 
+/** A stable point somewhere over the continental US, derived from the address. */
+function mockDestination(address: string) {
+  const seed = hashUnit(address)
+  return { latitude: 34 + seed * 7, longitude: -118 + seed * 44 }
+}
+
 const BASE_SPEED_KPH: Record<TravelQuery['mode'], number> = {
   drive: 45,
   transit: 22,
@@ -69,6 +75,7 @@ export class MockMapsProvider implements MapsProvider {
       pessimisticMinutes: Math.max(1, expected + spread * 1.8),
       distanceMeters,
       source: 'mock',
+      destination: mockDestination(query.destination),
     }
   }
 
@@ -101,6 +108,7 @@ export class MockMapsProvider implements MapsProvider {
       pessimisticMinutes: expected + headway,
       distanceMeters,
       source: 'mock',
+      destination: mockDestination(query.destination),
       oneSidedSpread: true,
       scheduledDepartureAt,
       missedConnectionMinutes: headway,

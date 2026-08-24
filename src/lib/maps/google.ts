@@ -13,7 +13,8 @@ const TRAVEL_MODE: Record<TravelMode, string> = {
 /** Only DRIVE accepts a traffic model, which is where the driving spread comes from. */
 type TrafficModel = 'OPTIMISTIC' | 'BEST_GUESS' | 'PESSIMISTIC'
 
-const BASE_FIELDS = 'routes.duration,routes.distanceMeters'
+// endLocation rides along free and spares a separate geocoding request.
+const BASE_FIELDS = 'routes.duration,routes.distanceMeters,routes.legs.endLocation'
 // Transit needs the boarding times and the headway behind each vehicle.
 const TRANSIT_FIELDS = `${BASE_FIELDS},routes.legs.steps.transitDetails`
 
@@ -25,11 +26,16 @@ interface TransitDetails {
   }
 }
 
+interface RouteLeg {
+  steps?: Array<{ transitDetails?: TransitDetails }>
+  endLocation?: { latLng?: { latitude?: number; longitude?: number } }
+}
+
 interface RoutesResponse {
   routes?: Array<{
     duration?: string
     distanceMeters?: number
-    legs?: Array<{ steps?: Array<{ transitDetails?: TransitDetails }> }>
+    legs?: RouteLeg[]
   }>
 }
 
@@ -68,6 +74,7 @@ export class GoogleMapsProvider implements MapsProvider {
       pessimisticMinutes: pessimistic.minutes,
       distanceMeters: expected.distanceMeters,
       source: 'google',
+      destination: expected.destination,
     }
   }
 
@@ -91,6 +98,7 @@ export class GoogleMapsProvider implements MapsProvider {
       pessimisticMinutes: route.minutes + worstHeadway,
       distanceMeters: route.distanceMeters,
       source: 'google',
+      destination: route.destination,
       oneSidedSpread: true,
       scheduledDepartureAt: route.scheduledDepartureAt ?? undefined,
       missedConnectionMinutes: worstHeadway || undefined,
@@ -107,6 +115,7 @@ export class GoogleMapsProvider implements MapsProvider {
       pessimisticMinutes: route.minutes,
       distanceMeters: route.distanceMeters,
       source: 'google',
+      destination: route.destination,
     }
   }
 
@@ -174,12 +183,18 @@ export class GoogleMapsProvider implements MapsProvider {
       .map((s) => s / 60)
 
     const firstDeparture = transitSteps[0]?.stopDetails?.departureTime
+    const legs = route?.legs ?? []
+    const end = legs[legs.length - 1]?.endLocation?.latLng
 
     return {
       minutes: seconds / 60,
       distanceMeters: route?.distanceMeters ?? 0,
       headwaysMinutes,
       scheduledDepartureAt: firstDeparture ? new Date(firstDeparture) : null,
+      destination:
+        end?.latitude !== undefined && end?.longitude !== undefined
+          ? { latitude: end.latitude, longitude: end.longitude }
+          : undefined,
     }
   }
 }
