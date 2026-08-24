@@ -95,9 +95,14 @@ Google Cloud console.
 
 ## Deploying
 
+Requires **Node 22+** — Wrangler refuses to run below that, and the build
+succeeds first, so on an older Node the failure lands on the very last line.
+`.nvmrc` pins it: `nvm use` picks up the right version.
+
 Static site on Workers, no Worker script:
 
 ```bash
+nvm use               # or otherwise get onto Node 22+
 npx wrangler login    # once
 npm run deploy        # builds, then deploys
 ```
@@ -105,9 +110,13 @@ npm run deploy        # builds, then deploys
 That prints the live URL — `calltime-alarm-clock.<your-subdomain>.workers.dev`.
 Open it in Safari on the phone and Add to Home Screen.
 
-Or point the Cloudflare dashboard at this repo (Workers → Create → Import a
-repository) with build command `npm run build` and output directory `dist`,
-which redeploys on every push.
+Or connect the repo in the dashboard (Workers & Pages → Create application →
+Import a repository) and skip the local toolchain entirely — Cloudflare builds
+it. Build command `npm run build`, deploy command `npx wrangler deploy`. Two
+things to get right: the Worker name in the dashboard must match `name` in
+`wrangler.jsonc` (`calltime-alarm-clock`) or the build fails, and Branch
+control defaults to the repo's default branch — point it at the branch you
+actually want deployed.
 
 ## Layout
 
