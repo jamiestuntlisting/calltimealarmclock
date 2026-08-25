@@ -402,16 +402,24 @@ input.input-hero {
   font-variant-numeric: tabular-nums;
 }
 
-/* The date reads as a line of text; the real control is invisible on top of
-   it, so the whole row opens the native picker. */
-.date-swap { position: relative; }
+/* The date is a pill that opens the native picker; the real control is
+   invisible on top of it so the whole pill is the tap target. */
+.date-swap {
+  position: relative;
+  align-self: flex-start;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
 
 .date-swap-label {
   display: block;
-  font-size: 13.5px;
-  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
   /* Tall enough to be a comfortable tap target, not just readable. */
-  padding: 14px 2px;
+  padding: 12px 16px;
+  white-space: nowrap;
 }
 
 .date-swap input[type='date'] {

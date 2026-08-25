@@ -25,6 +25,21 @@ export default function CallForm({ call, onChange, onCalculate, canCalculate, bu
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* A button that is really the native picker, laid invisibly over its own
+          label so the whole pill is the tap target. */}
+      <div className="date-swap">
+        <span className="date-swap-label">
+          {formatRelativeDay(combineDateAndTime(call.date, '12:00'))}
+        </span>
+        <input
+          id="call-date"
+          type="date"
+          aria-label="Call date"
+          value={call.date}
+          onChange={(e) => set('date', e.target.value)}
+        />
+      </div>
+
       <div className="field">
         <label htmlFor="call-time">Call time</label>
         <input
@@ -34,21 +49,6 @@ export default function CallForm({ call, onChange, onCalculate, canCalculate, bu
           value={call.time}
           onChange={(e) => set('time', e.target.value)}
         />
-
-        {/* The native picker sits invisibly over the label, so the whole row
-            is the tap target and the date reads as a sentence until touched. */}
-        <div className="date-swap">
-          <span className="date-swap-label">
-            {formatRelativeDay(combineDateAndTime(call.date, '12:00'))}
-          </span>
-          <input
-            id="call-date"
-            type="date"
-            aria-label="Call date"
-            value={call.date}
-            onChange={(e) => set('date', e.target.value)}
-          />
-        </div>
       </div>
 
       <div>
