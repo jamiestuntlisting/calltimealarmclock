@@ -291,37 +291,42 @@ button:active { opacity: 0.7; }
   font-weight: 700;
 }
 
+/* Every time reads at the same size, so the column scans as one list. */
 .moment-time {
-  font-size: 26px;
+  font-size: 38px;
   font-weight: 650;
-  letter-spacing: -0.6px;
+  letter-spacing: -1.1px;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 
-/* The two you actually set an alarm for. */
-.moment.alarm .moment-time { font-size: 40px; letter-spacing: -1.2px; }
+/* Weight moves to the label instead: the two you act on are not muted. */
 .moment.alarm .moment-label { color: var(--text); }
 
 .moment-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-/* Gaps are rule-led so the eye reads them as the space between two times. */
+/* A gap is a rule across the card with its duration sitting on it, so the
+   eye reads it as the space between two times rather than another entry. */
 .gap {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 12px;
-  color: var(--muted);
-  padding: 2px 0;
+  gap: 10px;
+  padding: 4px 0;
 }
 
-.gap::before {
+.gap::before,
+.gap::after {
   content: '';
-  width: 2px;
-  align-self: stretch;
-  min-height: 15px;
+  flex: 1;
+  height: 1px;
   background: var(--line);
-  border-radius: 1px;
+}
+
+.gap-text {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .gap-range { color: #5f6a80; }
@@ -371,30 +376,7 @@ button:active { opacity: 0.7; }
   max-width: 100%;
 }
 
-/* ---- Two alarms, stacked: wake up, then leave the house ---- */
-.alarms {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.alarm { padding: 13px 16px; }
-.alarm + .alarm { border-top: 1px solid var(--line); }
-
-/* Label and time share a baseline so the two times align down the edge. */
-.alarm-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.alarm .hero-label { letter-spacing: 1.2px; }
-.alarm .hero-time { font-size: 40px; letter-spacing: -1.2px; margin: 0; line-height: 1.05; }
-.alarm .hero-day { font-size: 12px; text-align: left; margin-top: 1px; }
-
-/* ---- Call time leads; the date is a fallback for anything the chips miss ---- */
+/* ---- The date pill, and the call time it sits above ---- */
 input.input-hero {
   font-size: 26px;
   font-weight: 650;

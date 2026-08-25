@@ -89,7 +89,9 @@ export default function PlanCard({ plan, call, prefs }: Props) {
           </div>
         </div>
 
-        <div className="gap">{formatDuration(prefs.getReadyMinutes)} to get ready</div>
+        <div className="gap">
+          <span className="gap-text">{formatDuration(prefs.getReadyMinutes)} to get ready</span>
+        </div>
 
         <div className="moment alarm">
           <div className="moment-row">
@@ -106,8 +108,10 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         </div>
 
         <div className="gap">
-          {formatDuration(plan.travel.expectedMinutes)} {travelWord(plan)}
-          {travelDetail(plan) && <span className="gap-range"> · {travelDetail(plan)}</span>}
+          <span className="gap-text">
+            {formatDuration(plan.travel.expectedMinutes)} {travelWord(plan)}
+            {travelDetail(plan) && <span className="gap-range"> · {travelDetail(plan)}</span>}
+          </span>
         </div>
 
         <div className="moment">
@@ -117,7 +121,9 @@ export default function PlanCard({ plan, call, prefs }: Props) {
           </div>
         </div>
 
-        <div className="gap">{formatDuration(prefs.arriveEarlyMinutes)} early</div>
+        <div className="gap">
+          <span className="gap-text">{formatDuration(prefs.arriveEarlyMinutes)} early</span>
+        </div>
 
         <div className="moment">
           <div className="moment-row">
