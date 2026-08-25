@@ -45,6 +45,27 @@ export function formatDuration(minutes: number): string {
   return `${hours}h ${mins}m`
 }
 
+/** Whole calendar days from `now` to `date`, ignoring the time of day. */
+export function daysUntil(date: Date, now: Date = new Date()): number {
+  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const b = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000)
+}
+
+/**
+ * "Tomorrow: Tue Aug 26" — the near days get named because that is how anyone
+ * talks about a call, and everything else just states the date.
+ */
+export function formatRelativeDay(date: Date, now: Date = new Date()): string {
+  const day = date
+    .toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+    .replace(',', '')
+  const offset = daysUntil(date, now)
+  if (offset === 0) return `Today: ${day}`
+  if (offset === 1) return `Tomorrow: ${day}`
+  return day
+}
+
 /** True when `a` and `b` fall on different calendar days. */
 export function isDifferentDay(a: Date, b: Date): boolean {
   return toDateInput(a) !== toDateInput(b)

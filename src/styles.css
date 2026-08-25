@@ -402,14 +402,30 @@ input.input-hero {
   font-variant-numeric: tabular-nums;
 }
 
-input.input-quiet {
-  font-size: 13px;
-  padding: 7px 10px;
+/* The date reads as a line of text; the real control is invisible on top of
+   it, so the whole row opens the native picker. */
+.date-swap { position: relative; }
+
+.date-swap-label {
+  display: block;
+  font-size: 13.5px;
   color: var(--muted);
-  background: transparent;
-  border-color: transparent;
+  /* Tall enough to be a comfortable tap target, not just readable. */
+  padding: 14px 2px;
 }
-input.input-quiet:hover { border-color: var(--line); }
+
+.date-swap input[type='date'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  /* Safari will not open the picker for a zero-height control. */
+  min-height: 100%;
+}
 
 /* Single full-width action now that "See the lot" is gone. */
 .action-link {
