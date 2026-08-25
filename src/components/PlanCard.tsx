@@ -24,29 +24,24 @@ function minutesShortOfTarget(plan: Plan): number {
   return Math.max(0, Math.ceil(needed - have))
 }
 
-function verdictText(plan: Plan, tone: Tone): { headline: string; detail: string } {
+function verdictText(plan: Plan, tone: Exclude<Tone, 'good'>): {
+  headline: string
+  detail: string
+} {
   const worst = formatClock(plan.worstCaseArrivalAt)
-  if (tone === 'bad') {
-    const short = minutesShortOfTarget(plan)
-    return {
-      headline: short > 0 ? `Leave ${formatDuration(short)} earlier.` : 'Leave earlier than this.',
-      detail: `Bad traffic puts you at the lot at ${worst}.`,
-    }
-  }
   // On transit the downside is a missed connection, not traffic — and saying
   // "traffic" to someone about to board a train reads as a bug.
   const cause = plan.travel.missedConnectionMinutes ? 'Miss your connection and' : 'Bad traffic'
   const verb = plan.travel.missedConnectionMinutes ? "you're at the lot" : 'puts you at the lot'
 
-  if (tone === 'warn') {
-    return { headline: 'Late is possible.', detail: `${cause} ${verb} at ${worst}.` }
+  if (tone === 'bad') {
+    const short = minutesShortOfTarget(plan)
+    return {
+      headline: short > 0 ? `Leave ${formatDuration(short)} earlier.` : 'Leave earlier than this.',
+      detail: `${cause} ${verb} at ${worst}.`,
+    }
   }
-  return {
-    headline: 'Buffer holds.',
-    detail: plan.travel.missedConnectionMinutes
-      ? `Even a missed connection gets you there by ${worst}.`
-      : `Even bad traffic gets you there by ${worst}.`,
-  }
+  return { headline: 'Late is possible.', detail: `${cause} ${verb} at ${worst}.` }
 }
 
 /** How the travelling gap is described, which depends on how you travel. */
@@ -68,9 +63,22 @@ function travelDetail(plan: Plan): string {
   return low === high ? '' : `${low}–${high}`
 }
 
+/** Shown only when the plan is worth arguing with. */
+function Flag({ plan, tone }: { plan: Plan; tone: Exclude<Tone, 'good'> }) {
+  const { headline, detail } = verdictText(plan, tone)
+  return (
+    <div className={`verdict ${tone}`}>
+      <div className="verdict-pct">{Math.round(plan.onTimeLikelihood * 100)}%</div>
+      <div className="verdict-text">
+        {headline}
+        <small>{detail}</small>
+      </div>
+    </div>
+  )
+}
+
 export default function PlanCard({ plan, call, prefs }: Props) {
   const tone = toneFor(plan)
-  const verdict = verdictText(plan, tone)
   const wakeIsPreviousDay = isDifferentDay(plan.wakeAt, plan.callAt)
   const leaveIsPreviousDay = isDifferentDay(plan.leaveAt, plan.callAt)
 
@@ -175,13 +183,7 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         </div>
       )}
 
-      <div className={`verdict ${tone}`}>
-        <div className="verdict-pct">{Math.round(plan.onTimeLikelihood * 100)}%</div>
-        <div className="verdict-text">
-          {verdict.headline}
-          <small>{verdict.detail}</small>
-        </div>
-      </div>
+      {tone !== 'good' && <Flag plan={plan} tone={tone} />}
 
       {plan.wakeTimeHasPassed && (
         <div className="error">That alarm time has already passed.</div>

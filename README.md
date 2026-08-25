@@ -18,8 +18,9 @@ Not department-dependent — the only job detail it needs is when and where.
   the second one is a real scheduled departure, not a derived time.
 - **Get ready / Travel / Arrive / Call** — the chain, so you can see where the
   time went.
-- **On-time likelihood** — a percentage, capped at 99%, which is also the
-  target: anything short of it is flagged, with how much earlier to leave.
+- **A flag when the leave time is risky** — and nothing at all when it is not.
+  99% is the target; falling short of it shows the odds and how much earlier
+  to leave. A safe plan says so by staying quiet.
 - **A flag when late is possible** — if the pessimistic traffic case lands you
   past call, the card turns amber. If the odds fall below your threshold, red.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
@@ -62,7 +63,8 @@ budget between leaving and call time. Two deliberate choices:
 - **It never reports better than 99%.** That is the "assuming nothing goes
   wrong" ceiling — a flat tire is not in the traffic data. It is also the bar:
   a plan below it is flagged, and the app says how much earlier to leave to
-  clear it.
+  clear it. A plan that clears the bar shows nothing, so anything on screen
+  is worth reading.
 - **Every estimate carries a noise floor** of at least 2 minutes, or 5% of the
   trip. A ten-minute walk is not deterministic either.
 

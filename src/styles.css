@@ -6,7 +6,6 @@
   --text: #f2f4f8;
   --muted: #8b93a7;
   --accent: #f5b544;
-  --good: #3ddc91;
   --warn: #f5b544;
   --bad: #ff5f56;
   --radius: 16px;
@@ -128,12 +127,10 @@ button:active { opacity: 0.7; }
   padding: 14px;
   border: 1px solid;
 }
-.verdict.good { background: rgba(61, 220, 145, 0.09); border-color: rgba(61, 220, 145, 0.35); }
 .verdict.warn { background: rgba(245, 181, 68, 0.1); border-color: rgba(245, 181, 68, 0.4); }
 .verdict.bad { background: rgba(255, 95, 86, 0.1); border-color: rgba(255, 95, 86, 0.45); }
 
 .verdict-pct { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
-.verdict.good .verdict-pct { color: var(--good); }
 .verdict.warn .verdict-pct { color: var(--warn); }
 .verdict.bad .verdict-pct { color: var(--bad); }
 .verdict-text { font-size: 14px; line-height: 1.35; }
