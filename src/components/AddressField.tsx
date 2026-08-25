@@ -74,42 +74,25 @@ export default function AddressField({ label, value, placeholder, onChange }: Pr
     }
   }
 
-  const paste = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      if (text.trim()) {
-        skipNextLookup.current = true
-        onChange(text.trim())
-      }
-    } catch {
-      // Clipboard read denied — the field is still typable.
-    }
-  }
-
   return (
     <div className="field address-field">
       <label htmlFor={inputId}>{label}</label>
-      <div className="row">
-        <input
-          id={inputId}
-          type="text"
-          autoComplete="off"
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setOpen(true)}
-          // Delayed so a tap on a suggestion lands before the list unmounts.
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
-          onKeyDown={onKeyDown}
-          role="combobox"
-          aria-expanded={suggestions.length > 0}
-          aria-controls={`${inputId}-list`}
-          aria-autocomplete="list"
-        />
-        <button type="button" className="btn-sm btn-ghost" onClick={paste}>
-          Paste
-        </button>
-      </div>
+      <input
+        id={inputId}
+        type="text"
+        autoComplete="off"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        // Delayed so a tap on a suggestion lands before the list unmounts.
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={onKeyDown}
+        role="combobox"
+        aria-expanded={suggestions.length > 0}
+        aria-controls={`${inputId}-list`}
+        aria-autocomplete="list"
+      />
 
       {open && suggestions.length > 0 && (
         <ul className="suggestions" id={`${inputId}-list`} role="listbox">

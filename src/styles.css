@@ -89,9 +89,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 
 input::placeholder { color: #5b6478; }
 
-.row { display: flex; gap: 8px; align-items: center; }
-.row > input { flex: 1; min-width: 0; }
-
 button {
   font-family: inherit;
   font-size: 15px;
