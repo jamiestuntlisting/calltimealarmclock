@@ -37,14 +37,23 @@ function verdictText(plan: Plan, tone: Tone): { headline: string; detail: string
   }
 }
 
-/** What the Travel row shows under its heading, which differs by mode. */
+/** How the travelling gap is described, which depends on how you travel. */
+function travelWord(plan: Plan): string {
+  if (plan.travel.scheduledDepartureAt || plan.travel.missedConnectionMinutes) return 'on transit'
+  return 'travelling'
+}
+
+/** The spread beside the expected duration, which differs by mode. */
 function travelDetail(plan: Plan): string {
   const { missedConnectionMinutes, transitLegs, optimisticMinutes, pessimisticMinutes } = plan.travel
   if (missedConnectionMinutes) {
     const next = `next in ${formatDuration(missedConnectionMinutes)}`
     return transitLegs && transitLegs > 1 ? `${transitLegs} legs — ${next}` : next
   }
-  return `${formatDuration(optimisticMinutes)}–${formatDuration(pessimisticMinutes)}`
+  const low = formatDuration(optimisticMinutes)
+  const high = formatDuration(pessimisticMinutes)
+  // A range whose ends round together says nothing — 4am has no traffic.
+  return low === high ? '' : `${low}–${high}`
 }
 
 export default function PlanCard({ plan, call, prefs }: Props) {
@@ -55,18 +64,27 @@ export default function PlanCard({ plan, call, prefs }: Props) {
 
   return (
     <div className="plan">
-      <div className="alarms">
-        <div className="alarm">
-          <div className="hero-label">Wake up</div>
-          <div className="hero-time">{formatClock(plan.wakeAt)}</div>
-          <div className="hero-day">
+      {/* One chain, read top to bottom: the two alarms you act on, then what
+          follows from them, with each gap labelled by what fills it. */}
+      <div className="chain">
+        <div className="moment alarm">
+          <div className="moment-row">
+            <div className="moment-label">Wake up</div>
+            <div className="moment-time">{formatClock(plan.wakeAt)}</div>
+          </div>
+          <div className="moment-sub">
             {wakeIsPreviousDay ? `${formatDay(plan.wakeAt)} — night before` : formatDay(plan.wakeAt)}
           </div>
         </div>
-        <div className="alarm">
-          <div className="hero-label">Leave</div>
-          <div className="hero-time">{formatClock(plan.leaveAt)}</div>
-          <div className="hero-day">
+
+        <div className="gap">{formatDuration(prefs.getReadyMinutes)} to get ready</div>
+
+        <div className="moment alarm">
+          <div className="moment-row">
+            <div className="moment-label">Leave</div>
+            <div className="moment-time">{formatClock(plan.leaveAt)}</div>
+          </div>
+          <div className="moment-sub">
             {leaveIsPreviousDay
               ? `${formatDay(plan.leaveAt)} — night before`
               : plan.travel.scheduledDepartureAt
@@ -74,34 +92,26 @@ export default function PlanCard({ plan, call, prefs }: Props) {
                 : `from ${resolveStartLabel(prefs)}`}
           </div>
         </div>
-      </div>
 
-      <div className="card timeline">
-        <div className="step">
-          <div className="step-name">
-            <strong>Get ready</strong>
-          </div>
-          <div className="step-time">{formatDuration(prefs.getReadyMinutes)}</div>
+        <div className="gap">
+          {formatDuration(plan.travel.expectedMinutes)} {travelWord(plan)}
+          {travelDetail(plan) && <span className="gap-range"> · {travelDetail(plan)}</span>}
         </div>
-        <div className="step">
-          <div className="step-name">
-            <strong>Travel</strong>
-            <span className="step-sub">{travelDetail(plan)}</span>
+
+        <div className="moment">
+          <div className="moment-row">
+            <div className="moment-label">Arrive</div>
+            <div className="moment-time">{formatClock(plan.targetArrivalAt)}</div>
           </div>
-          <div className="step-time">{formatDuration(plan.travel.expectedMinutes)}</div>
         </div>
-        <div className="step">
-          <div className="step-name">
-            <strong>Arrive</strong>
-            <span className="step-sub">{prefs.arriveEarlyMinutes}m early</span>
+
+        <div className="gap">{formatDuration(prefs.arriveEarlyMinutes)} early</div>
+
+        <div className="moment">
+          <div className="moment-row">
+            <div className="moment-label">Call</div>
+            <div className="moment-time">{formatClock(plan.callAt)}</div>
           </div>
-          <div className="step-time">{formatClock(plan.targetArrivalAt)}</div>
-        </div>
-        <div className="step">
-          <div className="step-name">
-            <strong>Call</strong>
-          </div>
-          <div className="step-time">{formatClock(plan.callAt)}</div>
         </div>
       </div>
 

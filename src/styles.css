@@ -123,49 +123,6 @@ button:active { opacity: 0.7; }
 /* ---- The plan: the part that gets screenshotted ---- */
 .plan { display: flex; flex-direction: column; gap: 12px; }
 
-.hero {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 18px;
-  text-align: center;
-}
-
-.hero-label {
-  font-size: 11px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.hero-time {
-  font-size: 60px;
-  line-height: 1.05;
-  font-weight: 700;
-  letter-spacing: -1.5px;
-  margin: 6px 0 2px;
-  font-variant-numeric: tabular-nums;
-}
-
-.hero-day { font-size: 13px; color: var(--muted); }
-
-.timeline { display: flex; flex-direction: column; }
-
-.step {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-}
-.step:last-child { border-bottom: none; }
-
-.step-name { font-size: 15px; color: var(--muted); }
-.step-name strong { color: var(--text); font-weight: 600; }
-.step-time { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.step-sub { font-size: 12px; color: var(--muted); margin-left: 8px; font-weight: 400; }
-
 .verdict {
   display: flex;
   align-items: center;
@@ -310,20 +267,135 @@ button:active { opacity: 0.7; }
   max-width: 100%;
 }
 
-/* ---- Two alarms: wake up, and leave the house ---- */
-.alarms { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.alarm {
+/* ---- The chain: four times stacked, durations as the connective tissue ----
+   Wake up and Leave are things you act on, so they carry the weight; Arrive
+   and Call follow from them, so they sit a step quieter. */
+.chain {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 10px;
-  text-align: center;
-  min-width: 0;
+  padding: 8px 16px 14px;
 }
 
-.alarm .hero-time { font-size: 38px; letter-spacing: -1px; margin: 4px 0 3px; }
-.alarm .hero-day { font-size: 12px; }
+.moment { padding: 7px 0; }
+
+.moment-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.moment-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.moment-time {
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The two you actually set an alarm for. */
+.moment.alarm .moment-time { font-size: 40px; letter-spacing: -1.2px; }
+.moment.alarm .moment-label { color: var(--text); }
+
+.moment-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Gaps are rule-led so the eye reads them as the space between two times. */
+.gap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+.gap::before {
+  content: '';
+  width: 2px;
+  align-self: stretch;
+  min-height: 15px;
+  background: var(--line);
+  border-radius: 1px;
+}
+
+.gap-range { color: #5f6a80; }
+
+/* ---- Address autocomplete ----
+   The list sits in flow rather than absolutely positioned: the settings sheet
+   is a scroll container, and an overlay would be clipped by it. */
+.address-field { position: relative; }
+
+.suggestions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 232px;
+  overflow-y: auto;
+}
+
+.suggestions button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+
+.suggestions button.highlighted,
+.suggestions button:hover { background: var(--line); }
+
+.suggestion-primary { font-size: 15px; font-weight: 550; }
+.suggestion-secondary {
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ---- Two alarms, stacked: wake up, then leave the house ---- */
+.alarms {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.alarm { padding: 13px 16px; }
+.alarm + .alarm { border-top: 1px solid var(--line); }
+
+/* Label and time share a baseline so the two times align down the edge. */
+.alarm-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.alarm .hero-label { letter-spacing: 1.2px; }
+.alarm .hero-time { font-size: 40px; letter-spacing: -1.2px; margin: 0; line-height: 1.05; }
+.alarm .hero-day { font-size: 12px; text-align: left; margin-top: 1px; }
 
 /* ---- Call time leads; the date is a fallback for anything the chips miss ---- */
 input.input-hero {
