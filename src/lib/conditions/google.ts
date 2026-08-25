@@ -1,5 +1,6 @@
-import type { Conditions, LatLng, PollenReading } from '../../types'
-import type { ConditionsProvider } from './provider'
+import type { Conditions, DayOutlook, LatLng, PollenReading, ThermalPreference } from '../../types'
+import { END_OFFSET_HOURS, MIDDAY_OFFSET_HOURS, type ConditionsProvider } from './provider'
+import { recommendWardrobe } from '../wardrobe'
 
 const WEATHER_ENDPOINT = 'https://weather.googleapis.com/v1/forecast/hours:lookup'
 const POLLEN_ENDPOINT = 'https://pollen.googleapis.com/v1/forecast:lookup'
@@ -36,21 +37,36 @@ export class GoogleConditionsProvider implements ConditionsProvider {
 
   constructor(private readonly apiKey: string) {}
 
-  async forecast(at: LatLng, when: Date): Promise<Conditions | null> {
-    const hoursOut = hoursBetween(new Date(), when)
-    if (hoursOut < 0 || hoursOut > MAX_WEATHER_HOURS) return null
+  async outlook(
+    at: LatLng,
+    callAt: Date,
+    preference: ThermalPreference,
+  ): Promise<DayOutlook | null> {
+    const hoursOut = hoursBetween(new Date(), callAt)
+    // The whole day has to be in range, not just the call.
+    if (hoursOut < 0 || hoursOut + END_OFFSET_HOURS > MAX_WEATHER_HOURS) return null
 
-    // Pollen is optional garnish; a failure there must not lose the weather.
-    const [weather, pollen] = await Promise.all([
-      this.fetchWeather(at, when, Math.ceil(hoursOut) + 1),
-      this.fetchPollen(at, when).catch(() => undefined),
+    const midday = addHours(callAt, MIDDAY_OFFSET_HOURS)
+    const end = addHours(callAt, END_OFFSET_HOURS)
+
+    // One weather request covers the whole day; pollen is a separate service.
+    const [hours, pollen] = await Promise.all([
+      this.fetchHours(at, Math.ceil(hoursOut) + END_OFFSET_HOURS + 1),
+      this.fetchPollen(at, callAt).catch(() => undefined),
     ])
-    if (!weather) return null
+    if (!hours) return null
 
-    return { ...weather, pollen, source: 'google' }
+    const start = pick(hours, callAt)
+    const points = [start, pick(hours, midday), pick(hours, end)]
+    if (points.some((p) => p === null)) return null
+
+    const [s, m, e] = points as Conditions[]
+    const { items, swingNote } = recommendWardrobe([s, m, e], preference)
+
+    return { start: s, midday: m, end: e, pollen, wardrobe: items, swingNote, source: 'google' }
   }
 
-  private async fetchWeather(at: LatLng, when: Date, hours: number) {
+  private async fetchHours(at: LatLng, hours: number) {
     const params = new URLSearchParams({
       key: this.apiKey,
       'location.latitude': String(at.latitude),
@@ -62,15 +78,7 @@ export class GoogleConditionsProvider implements ConditionsProvider {
     if (!response.ok) return null
 
     const data = (await response.json()) as { forecastHours?: WeatherHour[] }
-    const hour = nearestHour(data.forecastHours ?? [], when)
-    const degrees = hour?.temperature?.degrees
-    if (!hour || degrees === undefined) return null
-
-    return {
-      temperatureF: Math.round(toFahrenheit(degrees, hour.temperature?.unit)),
-      summary: hour.weatherCondition?.description?.text ?? '',
-      precipitationChance: Math.round(hour.precipitation?.probability?.percent ?? 0),
-    }
+    return data.forecastHours ?? []
   }
 
   private async fetchPollen(at: LatLng, when: Date): Promise<PollenReading | undefined> {
@@ -104,6 +112,23 @@ export class GoogleConditionsProvider implements ConditionsProvider {
       category: worst.indexInfo.category ?? '',
       type: worst.displayName ?? '',
     }
+  }
+}
+
+function addHours(date: Date, hours: number): Date {
+  return new Date(date.getTime() + hours * 3_600_000)
+}
+
+/** Read one moment out of the hourly series. */
+function pick(hours: WeatherHour[], when: Date): Conditions | null {
+  const hour = nearestHour(hours, when)
+  const degrees = hour?.temperature?.degrees
+  if (!hour || degrees === undefined) return null
+  return {
+    at: when,
+    temperatureF: Math.round(toFahrenheit(degrees, hour.temperature?.unit)),
+    summary: hour.weatherCondition?.description?.text ?? '',
+    precipitationChance: Math.round(hour.precipitation?.probability?.percent ?? 0),
   }
 }
 

@@ -16,12 +16,17 @@ Not department-dependent — the only job detail it needs is when and where.
   the second one is a real scheduled departure, not a derived time.
 - **Get ready / Travel / Arrive / Call** — the chain, so you can see where the
   time went.
-- **On-time likelihood** — a percentage, capped at 99%. Nothing is certain.
+- **On-time likelihood** — a percentage, capped at 99%, which is also the
+  target: anything short of it is flagged, with how much earlier to leave.
 - **A flag when late is possible** — if the pessimistic traffic case lands you
   past call, the card turns amber. If the odds fall below your threshold, red.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
-- **Weather and pollen at the lot, at call time** — not what it is like at
-  home now. Pollen is coloured only once it is high enough to act on.
+- **The day you are dressing for** — weather at call, six hours in, and twelve
+  hours in, because a 6am call can start near freezing and finish warm.
+- **What to wear** — driven by the coldest point of the day, since you can take
+  a layer off but cannot put on what you left at home. Shifted by how cold you
+  run, which is a preference.
+- **Pollen**, coloured only once it is high enough to act on.
 Both address fields autocomplete against Google Places, so "Universal Studios —
 Gate 2" and "Gate 8" come back as separate rows with separate addresses instead
 of one ambiguous string.
@@ -52,7 +57,9 @@ On-time likelihood is then the probability that the real trip fits inside the
 budget between leaving and call time. Two deliberate choices:
 
 - **It never reports better than 99%.** That is the "assuming nothing goes
-  wrong" ceiling — a flat tire is not in the traffic data.
+  wrong" ceiling — a flat tire is not in the traffic data. It is also the bar:
+  a plan below it is flagged, and the app says how much earlier to leave to
+  clear it.
 - **Every estimate carries a noise floor** of at least 2 minutes, or 5% of the
   trip. A ten-minute walk is not deterministic either.
 
@@ -130,7 +137,8 @@ actually want deployed.
 
 ```
 src/lib/risk.ts        on-time likelihood from the traffic spread
-src/lib/conditions/    weather and pollen at the lot at call time
+src/lib/conditions/    weather and pollen across the shoot day
+src/lib/wardrobe.ts    what to wear, from the coldest point and how cold you run
 src/lib/schedule.ts    works the chain backwards; resolves the traffic loop
 src/lib/maps/          routing: provider interface, Google Routes, and the mock
 src/lib/places/        autocomplete: same shape, Google Places and a mock
@@ -151,12 +159,17 @@ npm run build
 - **Walking and cycling get no spread.** No traffic model and no timetable, so
   they fall back to the noise floor. That is roughly right — neither has much
   variance — but it is a floor, not a measurement.
-- **Conditions are best-effort.** Weather reaches 240 hours out and pollen 5
-  days; past that the strip simply does not render. A forecast failure is
+- **Conditions are best-effort.** The whole twelve-hour day has to fit inside
+  the 240-hour weather window, and pollen reaches 5 days; past that the strip
+  simply does not render. A forecast failure is
   swallowed rather than surfaced — the alarm is the product.
 - **Transit assumes you make the first train.** The model prices in one missed
   connection at the worst headway on the route. It does not model a train that
   is cancelled outright, or a line that is down.
+- **A shoot day is assumed to be twelve hours.** Long days run longer; the
+  end-of-day forecast is a floor, not a promise.
+- **Wardrobe advice ignores wind.** Thirty-eight degrees in a gale is not
+  thirty-eight degrees, and the app does not know the difference.
 - **Autocomplete suggests, it does not verify.** A picked suggestion is a real
   place, but nothing checks it is the lot *your* production meant.
 - **Preferences live on the device.** They are in `localStorage`, so they are

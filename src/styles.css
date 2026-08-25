@@ -423,25 +423,58 @@ input.input-quiet:hover { border-color: var(--line); }
   border-radius: 10px;
 }
 
-/* ---- Conditions at the lot at call time: one row, never two ---- */
-.conditions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+/* ---- The day you are dressing for: three points, then what to wear ---- */
+.outlook {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 11px 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.conditions-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.conditions-temp { font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.conditions-summary { font-size: 14px; color: var(--muted); }
-.conditions-rain { font-size: 12.5px; color: var(--muted); }
+.outlook-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
-.pollen { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.point { text-align: center; min-width: 0; }
+.point-when {
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+.point-temp { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 1px; }
+.point-summary {
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.point-rain { font-size: 11px; color: var(--accent); }
+
+.wardrobe { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.wear {
+  font-size: 12px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.outlook-notes {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pollen { font-weight: 600; white-space: nowrap; }
 /* Only a reading worth acting on gets colour. */
 .pollen-0, .pollen-1, .pollen-2 { color: var(--muted); }
 .pollen-3 { color: var(--warn); }

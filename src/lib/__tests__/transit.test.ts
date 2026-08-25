@@ -11,7 +11,7 @@ const basePrefs: Preferences = {
   places: [{ id: 'home', label: 'Home', address: '433 Warren St, Brooklyn NY' }],
   getReadyMinutes: 30,
   arriveEarlyMinutes: 15,
-  onTimeThreshold: 0.9,
+  thermalPreference: 'average',
 }
 
 const call: CallDetails = {

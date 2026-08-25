@@ -9,7 +9,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   places: [{ id: 'home', label: 'Home', address: '' }],
   getReadyMinutes: 30,
   arriveEarlyMinutes: 15,
-  onTimeThreshold: 0.9,
+  thermalPreference: 'average',
 }
 
 export function defaultCallDetails(now: Date = new Date()): CallDetails {

@@ -18,8 +18,8 @@ export interface Preferences {
   places: Place[]
   getReadyMinutes: number
   arriveEarlyMinutes: number
-  /** Minimum acceptable on-time likelihood before the plan is flagged. */
-  onTimeThreshold: number
+  /** Whether this person feels the cold more or less than most. */
+  thermalPreference: ThermalPreference
 }
 
 /** The job-specific details, entered fresh for each call. */
@@ -78,19 +78,37 @@ export interface LatLng {
   longitude: number
 }
 
-/**
- * What it will be like standing at the lot at call time — not what it is like
- * at home now. Absent when the call is further out than the forecast reaches.
- */
+/** One moment of weather at the lot. */
 export interface Conditions {
+  at: Date
   temperatureF: number
   /** Short description, e.g. "Light rain". */
   summary: string
   /** 0-100. */
   precipitationChance: number
+}
+
+/**
+ * A shoot day is long, so one number is not enough: a 6am call can start near
+ * freezing and finish warm. Three points bracket what you have to dress for.
+ */
+export interface DayOutlook {
+  start: Conditions
+  midday: Conditions
+  end: Conditions
   pollen?: PollenReading
+  /** What to actually put in the bag, coldest point of the day first. */
+  wardrobe: string[]
+  /** Set when the day swings enough that layering is the real advice. */
+  swingNote?: string
   source: 'google' | 'mock'
 }
+
+/**
+ * How a person runs relative to everyone else on the crew. Shifts the
+ * temperature the wardrobe advice is computed from.
+ */
+export type ThermalPreference = 'cold' | 'average' | 'warm'
 
 export interface PollenReading {
   /** Universal Pollen Index, 0-5. */
@@ -132,6 +150,6 @@ export interface Plan {
   couldBeLate: boolean
   /** True when the wake time has already passed. */
   wakeTimeHasPassed: boolean
-  /** Weather and pollen at the lot at call time, when the forecast reaches. */
-  conditions?: Conditions
+  /** Weather, pollen and wardrobe for the day, when the forecast reaches. */
+  outlook?: DayOutlook
 }

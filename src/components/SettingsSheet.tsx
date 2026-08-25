@@ -1,5 +1,11 @@
-import type { Preferences } from '../types'
+import type { Preferences, ThermalPreference } from '../types'
 import AddressField from './AddressField'
+
+const THERMAL: Array<{ value: ThermalPreference; label: string }> = [
+  { value: 'cold', label: 'Always cold' },
+  { value: 'average', label: 'Average' },
+  { value: 'warm', label: 'Run warm' },
+]
 
 interface Props {
   prefs: Preferences
@@ -87,17 +93,20 @@ export default function SettingsSheet({ prefs, onChange, onClose }: Props) {
         />
 
         <div className="field">
-          <label htmlFor="threshold">Flag below</label>
-          <select
-            id="threshold"
-            value={prefs.onTimeThreshold}
-            onChange={(e) => set('onTimeThreshold', Number(e.target.value))}
-          >
-            <option value={0.75}>75% on time</option>
-            <option value={0.85}>85% on time</option>
-            <option value={0.9}>90% on time</option>
-            <option value={0.95}>95% on time</option>
-          </select>
+          <label>How cold do you run</label>
+          <div className="chips">
+            {THERMAL.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="chip"
+                aria-pressed={prefs.thermalPreference === option.value}
+                onClick={() => set('thermalPreference', option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

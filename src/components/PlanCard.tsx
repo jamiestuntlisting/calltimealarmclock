@@ -1,5 +1,6 @@
 import type { CallDetails, Plan, Preferences } from '../types'
-import { formatClock, formatDay, formatDuration, isDifferentDay } from '../lib/time'
+import { formatClock, formatDay, formatDuration, isDifferentDay, minutesBetween } from '../lib/time'
+import { MAX_LIKELIHOOD, budgetForLikelihood } from '../lib/risk'
 import { googleMapsDirectionsUrl } from '../lib/deeplink'
 import { resolveStartLabel } from '../lib/schedule'
 
@@ -11,21 +12,32 @@ interface Props {
 
 type Tone = 'good' | 'warn' | 'bad'
 
-function toneFor(plan: Plan, prefs: Preferences): Tone {
-  if (plan.onTimeLikelihood < prefs.onTimeThreshold) return 'bad'
+function toneFor(plan: Plan): Tone {
+  if (plan.onTimeLikelihood < MAX_LIKELIHOOD) return 'bad'
   return plan.couldBeLate ? 'warn' : 'good'
+}
+
+/** How much earlier you would have to leave to reach the 99% ceiling. */
+function minutesShortOfTarget(plan: Plan): number {
+  const needed = budgetForLikelihood(plan.travel, MAX_LIKELIHOOD)
+  const have = minutesBetween(plan.leaveAt, plan.callAt)
+  return Math.max(0, Math.ceil(needed - have))
 }
 
 function verdictText(plan: Plan, tone: Tone): { headline: string; detail: string } {
   const worst = formatClock(plan.worstCaseArrivalAt)
+  if (tone === 'bad') {
+    const short = minutesShortOfTarget(plan)
+    return {
+      headline: short > 0 ? `Leave ${formatDuration(short)} earlier.` : 'Leave earlier than this.',
+      detail: `Bad traffic puts you at the lot at ${worst}.`,
+    }
+  }
   // On transit the downside is a missed connection, not traffic — and saying
   // "traffic" to someone about to board a train reads as a bug.
   const cause = plan.travel.missedConnectionMinutes ? 'Miss your connection and' : 'Bad traffic'
   const verb = plan.travel.missedConnectionMinutes ? "you're at the lot" : 'puts you at the lot'
 
-  if (tone === 'bad') {
-    return { headline: 'Leave earlier than this.', detail: `${cause} ${verb} at ${worst}.` }
-  }
   if (tone === 'warn') {
     return { headline: 'Late is possible.', detail: `${cause} ${verb} at ${worst}.` }
   }
@@ -57,7 +69,7 @@ function travelDetail(plan: Plan): string {
 }
 
 export default function PlanCard({ plan, call, prefs }: Props) {
-  const tone = toneFor(plan, prefs)
+  const tone = toneFor(plan)
   const verdict = verdictText(plan, tone)
   const wakeIsPreviousDay = isDifferentDay(plan.wakeAt, plan.callAt)
   const leaveIsPreviousDay = isDifferentDay(plan.leaveAt, plan.callAt)
@@ -115,18 +127,37 @@ export default function PlanCard({ plan, call, prefs }: Props) {
         </div>
       </div>
 
-      {plan.conditions && (
-        <div className="conditions">
-          <div className="conditions-main">
-            <span className="conditions-temp">{plan.conditions.temperatureF}°</span>
-            <span className="conditions-summary">{plan.conditions.summary}</span>
-            {plan.conditions.precipitationChance >= 20 && (
-              <span className="conditions-rain">{plan.conditions.precipitationChance}% rain</span>
-            )}
+      {plan.outlook && (
+        <div className="outlook">
+          <div className="outlook-points">
+            {[plan.outlook.start, plan.outlook.midday, plan.outlook.end].map((point, i) => (
+              <div className="point" key={i}>
+                <div className="point-when">{formatClock(point.at)}</div>
+                <div className="point-temp">{point.temperatureF}°</div>
+                <div className="point-summary">{point.summary}</div>
+                {point.precipitationChance >= 20 && (
+                  <div className="point-rain">{point.precipitationChance}% rain</div>
+                )}
+              </div>
+            ))}
           </div>
-          {plan.conditions.pollen && (
-            <div className={`pollen pollen-${Math.min(5, plan.conditions.pollen.index)}`}>
-              {plan.conditions.pollen.type} pollen · {plan.conditions.pollen.category}
+
+          {plan.outlook.wardrobe.length > 0 && (
+            <div className="wardrobe">
+              {plan.outlook.wardrobe.map((item) => (
+                <span className="wear" key={item}>{item}</span>
+              ))}
+            </div>
+          )}
+
+          {(plan.outlook.swingNote || plan.outlook.pollen) && (
+            <div className="outlook-notes">
+              {plan.outlook.swingNote && <span>{plan.outlook.swingNote}</span>}
+              {plan.outlook.pollen && (
+                <span className={`pollen pollen-${Math.min(5, plan.outlook.pollen.index)}`}>
+                  {plan.outlook.pollen.type} pollen · {plan.outlook.pollen.category}
+                </span>
+              )}
             </div>
           )}
         </div>

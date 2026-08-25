@@ -39,9 +39,11 @@ export async function buildPlan(
   const budgetMinutes = minutesBetween(leaveAt, callAt)
 
   // Conditions are garnish: never let a forecast failure cost you the alarm.
-  const conditions =
+  const outlook =
     conditionsProvider && travel.destination
-      ? await conditionsProvider.forecast(travel.destination, callAt).catch(() => null)
+      ? await conditionsProvider
+          .outlook(travel.destination, callAt, prefs.thermalPreference)
+          .catch(() => null)
       : null
 
   return {
@@ -54,7 +56,7 @@ export async function buildPlan(
     onTimeLikelihood: onTimeLikelihood(travel, budgetMinutes),
     couldBeLate: worstCaseArrivalAt.getTime() > callAt.getTime(),
     wakeTimeHasPassed: wakeAt.getTime() < now.getTime(),
-    conditions: conditions ?? undefined,
+    outlook: outlook ?? undefined,
   }
 }
 
