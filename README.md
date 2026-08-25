@@ -2,7 +2,9 @@
 
 Work backwards from a call time to the alarm you actually need.
 
-You enter a call time and the address you report to. The app already knows
+You enter a call time and the address you report to, then tap Calculate.
+Nothing is computed on load: a plan sitting next to details you have since
+changed is a lie, and each calculation is a live routing request. The app already knows
 where you start from, how long you take to get ready, and how early you like
 to be standing there — set once, kept on the device. It routes the commute with live traffic, works the whole
 chain backwards, and gives you one screen you can screenshot.
@@ -23,9 +25,10 @@ Not department-dependent — the only job detail it needs is when and where.
 - **Directions** — opens Google Maps from wherever you're standing to the lot.
 - **The day you are dressing for** — weather at call, six hours in, and twelve
   hours in, because a 6am call can start near freezing and finish warm.
-- **What to wear** — driven by the coldest point of the day, since you can take
-  a layer off but cannot put on what you left at home. Shifted by how cold you
-  run, which is a preference.
+- **What to wear** — driven by the *feels-like* at the coldest point of the
+  day, since you can take a layer off but cannot put on what you left at home.
+  Shifted by how cold you run, which is a preference.
+- **Wind**, at each point, because a windy 45 dresses like the 38 it is.
 - **Pollen**, coloured only once it is high enough to act on.
 Both address fields autocomplete against Google Places, so "Universal Studios —
 Gate 2" and "Gate 8" come back as separate rows with separate addresses instead
@@ -138,7 +141,7 @@ actually want deployed.
 ```
 src/lib/risk.ts        on-time likelihood from the traffic spread
 src/lib/conditions/    weather and pollen across the shoot day
-src/lib/wardrobe.ts    what to wear, from the coldest point and how cold you run
+src/lib/wardrobe.ts    what to wear; also NWS wind chill for feels-like
 src/lib/schedule.ts    works the chain backwards; resolves the traffic loop
 src/lib/maps/          routing: provider interface, Google Routes, and the mock
 src/lib/places/        autocomplete: same shape, Google Places and a mock
@@ -168,8 +171,9 @@ npm run build
   is cancelled outright, or a line that is down.
 - **A shoot day is assumed to be twelve hours.** Long days run longer; the
   end-of-day forecast is a floor, not a promise.
-- **Wardrobe advice ignores wind.** Thirty-eight degrees in a gale is not
-  thirty-eight degrees, and the app does not know the difference.
+- **Wardrobe bands assume you are standing around outdoors**, which is what
+  the job mostly is. They are deliberately not cautious: no jacket appears
+  until it is genuinely jacket weather.
 - **Autocomplete suggests, it does not verify.** A picked suggestion is a real
   place, but nothing checks it is the lot *your* production meant.
 - **Preferences live on the device.** They are in `localStorage`, so they are

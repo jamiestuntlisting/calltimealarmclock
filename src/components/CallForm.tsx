@@ -12,8 +12,9 @@ const MODES: Array<{ value: TravelMode; label: string }> = [
 interface Props {
   call: CallDetails
   onChange: (next: CallDetails) => void
-  /** Present only once there is a plan to collapse back to. */
-  onDone?: () => void
+  onCalculate: () => void
+  canCalculate: boolean
+  busy: boolean
 }
 
 function shiftDays(days: number): string {
@@ -22,7 +23,7 @@ function shiftDays(days: number): string {
   return toDateInput(d)
 }
 
-export default function CallForm({ call, onChange, onDone }: Props) {
+export default function CallForm({ call, onChange, onCalculate, canCalculate, busy }: Props) {
   const set = <K extends keyof CallDetails>(key: K, value: CallDetails[K]) =>
     onChange({ ...call, [key]: value })
 
@@ -95,11 +96,14 @@ export default function CallForm({ call, onChange, onDone }: Props) {
         </div>
       </div>
 
-      {onDone && (
-        <button type="button" className="btn-accent" onClick={onDone}>
-          Done
-        </button>
-      )}
+      <button
+        type="button"
+        className="btn-accent"
+        onClick={onCalculate}
+        disabled={!canCalculate || busy}
+      >
+        {busy ? 'Working it out…' : 'Calculate'}
+      </button>
     </div>
   )
 }

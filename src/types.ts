@@ -82,6 +82,9 @@ export interface LatLng {
 export interface Conditions {
   at: Date
   temperatureF: number
+  /** What it feels like once wind and humidity are accounted for. */
+  feelsLikeF: number
+  windMph: number
   /** Short description, e.g. "Light rain". */
   summary: string
   /** 0-100. */
@@ -101,6 +104,8 @@ export interface DayOutlook {
   wardrobe: string[]
   /** Set when the day swings enough that layering is the real advice. */
   swingNote?: string
+  /** Set when wind is strong enough to change what you take. */
+  windNote?: string
   source: 'google' | 'mock'
 }
 

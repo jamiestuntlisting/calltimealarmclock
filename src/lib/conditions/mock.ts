@@ -1,6 +1,6 @@
 import type { Conditions, DayOutlook, LatLng, ThermalPreference } from '../../types'
 import { END_OFFSET_HOURS, MIDDAY_OFFSET_HOURS, type ConditionsProvider } from './provider'
-import { recommendWardrobe } from '../wardrobe'
+import { recommendWardrobe, windChillF } from '../wardrobe'
 
 const MAX_FORECAST_HOURS = 240
 
@@ -41,9 +41,14 @@ export class MockConditionsProvider implements ConditionsProvider {
       // Peaks at 15:00 and bottoms out before dawn, which is the shape a
       // pre-dawn call actually runs into.
       const diurnal = Math.cos(((when.getHours() - 15) / 24) * 2 * Math.PI) * 11
+      const temperatureF = Math.round(58 + seed * 20 + diurnal)
+      // Afternoons are windier than dawns.
+      const windMph = Math.round(3 + seed * 14 + Math.max(0, diurnal) * 0.6)
       return {
         at: when,
-        temperatureF: Math.round(58 + seed * 20 + diurnal),
+        temperatureF,
+        feelsLikeF: Math.round(windChillF(temperatureF, windMph)),
+        windMph,
         summary,
         precipitationChance:
           summary === 'Light rain' ? Math.round(40 + seed * 45) : Math.round(seed * 20),
@@ -53,7 +58,7 @@ export class MockConditionsProvider implements ConditionsProvider {
     const start = point(callAt)
     const midday = point(addHours(callAt, MIDDAY_OFFSET_HOURS))
     const end = point(addHours(callAt, END_OFFSET_HOURS))
-    const { items, swingNote } = recommendWardrobe([start, midday, end], preference)
+    const { items, swingNote, windNote } = recommendWardrobe([start, midday, end], preference)
 
     const pollenIndex = Math.floor(seed * 6)
 
@@ -70,6 +75,7 @@ export class MockConditionsProvider implements ConditionsProvider {
         : undefined,
       wardrobe: items,
       swingNote,
+      windNote,
       source: 'mock',
     }
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import CallForm from './components/CallForm'
 import CallSummary from './components/CallSummary'
 import PlanCard from './components/PlanCard'
@@ -12,20 +12,17 @@ import {
   saveCallDetails,
   savePreferences,
 } from './lib/storage'
-import type { Plan } from './types'
-
-/** Address edits arrive a keystroke at a time; wait for a pause before routing. */
-const LOOKUP_DEBOUNCE_MS = 450
+import type { CallDetails, Plan, Preferences } from './types'
 
 export default function App() {
   const [prefs, setPrefs] = useState(loadPreferences)
   const [call, setCall] = useState(loadCallDetails)
+  // Never computed on load. A stale plan next to edited details is a lie, and
+  // every calculation is a billed round trip, so it takes a deliberate tap.
   const [plan, setPlan] = useState<Plan | null>(null)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // Open on a first run so the details get filled in; collapsed on a return
-  // visit, where the saved call is already good and the plan is the point.
-  const [editingCall, setEditingCall] = useState(() => call.reportAddress.trim() === '')
 
   const provider = useMemo(() => createMapsProvider(), [])
   const conditions = useMemo(() => createConditionsProvider(), [])
@@ -42,34 +39,32 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const requestId = useRef(0)
+  /** Any edit invalidates the plan, so the form comes back with it. */
+  const editCall = (next: CallDetails) => {
+    setCall(next)
+    setPlan(null)
+    setError(null)
+  }
 
-  useEffect(() => {
-    if (!ready) {
+  const editPrefs = (next: Preferences) => {
+    setPrefs(next)
+    setPlan(null)
+    setError(null)
+  }
+
+  const calculate = async () => {
+    if (!ready || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      setPlan(await buildPlan(call, prefs, provider, new Date(), conditions))
+    } catch (err) {
       setPlan(null)
-      setError(null)
-      return
+      setError(err instanceof Error ? err.message : 'Could not work out the route.')
+    } finally {
+      setBusy(false)
     }
-
-    const id = ++requestId.current
-    const timer = setTimeout(async () => {
-      try {
-        const next = await buildPlan(call, prefs, provider, new Date(), conditions)
-        // A newer lookup started while this one was in flight.
-        if (id === requestId.current) {
-          setPlan(next)
-          setError(null)
-        }
-      } catch (err) {
-        if (id === requestId.current) {
-          setPlan(null)
-          setError(err instanceof Error ? err.message : 'Could not work out the route.')
-        }
-      }
-    }, LOOKUP_DEBOUNCE_MS)
-
-    return () => clearTimeout(timer)
-  }, [call, prefs, provider, conditions, ready])
+  }
 
   return (
     <div className="app">
@@ -80,19 +75,21 @@ export default function App() {
         </button>
       </div>
 
-      {plan && !editingCall ? (
-        <CallSummary call={call} onEdit={() => setEditingCall(true)} />
+      {plan ? (
+        <CallSummary call={call} onEdit={() => setPlan(null)} />
       ) : (
         <CallForm
           call={call}
-          onChange={setCall}
-          onDone={plan ? () => setEditingCall(false) : undefined}
+          onChange={editCall}
+          onCalculate={calculate}
+          canCalculate={ready}
+          busy={busy}
         />
       )}
 
       {error && <div className="error">{error}</div>}
 
-      {!ready && !error && (
+      {!plan && !ready && !error && (
         <div className="empty">
           {startAddress.trim() === ''
             ? 'Set where you start from in Preferences.'
@@ -100,16 +97,12 @@ export default function App() {
         </div>
       )}
 
-      {ready && !plan && !error && <div className="empty">Working out the commute…</div>}
-
-      {plan && (
-        <PlanCard plan={plan} call={call} prefs={prefs} />
-      )}
+      {plan && <PlanCard plan={plan} call={call} prefs={prefs} />}
 
       {settingsOpen && (
         <SettingsSheet
           prefs={prefs}
-          onChange={setPrefs}
+          onChange={editPrefs}
           onClose={() => setSettingsOpen(false)}
         />
       )}

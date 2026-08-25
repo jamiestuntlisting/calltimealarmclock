@@ -134,7 +134,11 @@ export default function PlanCard({ plan, call, prefs }: Props) {
               <div className="point" key={i}>
                 <div className="point-when">{formatClock(point.at)}</div>
                 <div className="point-temp">{point.temperatureF}°</div>
+                {Math.abs(point.feelsLikeF - point.temperatureF) >= 3 && (
+                  <div className="point-feels">feels {point.feelsLikeF}°</div>
+                )}
                 <div className="point-summary">{point.summary}</div>
+                <div className="point-wind">{point.windMph} mph</div>
                 {point.precipitationChance >= 20 && (
                   <div className="point-rain">{point.precipitationChance}% rain</div>
                 )}
@@ -150,9 +154,11 @@ export default function PlanCard({ plan, call, prefs }: Props) {
             </div>
           )}
 
-          {(plan.outlook.swingNote || plan.outlook.pollen) && (
+          {(plan.outlook.swingNote || plan.outlook.windNote || plan.outlook.pollen) && (
             <div className="outlook-notes">
-              {plan.outlook.swingNote && <span>{plan.outlook.swingNote}</span>}
+              <span>
+                {[plan.outlook.swingNote, plan.outlook.windNote].filter(Boolean).join(' · ')}
+              </span>
               {plan.outlook.pollen && (
                 <span className={`pollen pollen-${Math.min(5, plan.outlook.pollen.index)}`}>
                   {plan.outlook.pollen.type} pollen · {plan.outlook.pollen.category}

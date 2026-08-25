@@ -452,6 +452,8 @@ input.input-quiet:hover { border-color: var(--line); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.point-feels { font-size: 11px; color: var(--muted); }
+.point-wind { font-size: 11px; color: var(--muted); }
 .point-rain { font-size: 11px; color: var(--accent); }
 
 .wardrobe { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -479,3 +481,5 @@ input.input-quiet:hover { border-color: var(--line); }
 .pollen-0, .pollen-1, .pollen-2 { color: var(--muted); }
 .pollen-3 { color: var(--warn); }
 .pollen-4, .pollen-5 { color: var(--bad); }
+
+button:disabled { opacity: 0.45; cursor: default; }

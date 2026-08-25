@@ -1,6 +1,6 @@
 import type { Conditions, DayOutlook, LatLng, PollenReading, ThermalPreference } from '../../types'
 import { END_OFFSET_HOURS, MIDDAY_OFFSET_HOURS, type ConditionsProvider } from './provider'
-import { recommendWardrobe } from '../wardrobe'
+import { recommendWardrobe, windChillF } from '../wardrobe'
 
 const WEATHER_ENDPOINT = 'https://weather.googleapis.com/v1/forecast/hours:lookup'
 const POLLEN_ENDPOINT = 'https://pollen.googleapis.com/v1/forecast:lookup'
@@ -9,9 +9,17 @@ const POLLEN_ENDPOINT = 'https://pollen.googleapis.com/v1/forecast:lookup'
 const MAX_WEATHER_HOURS = 240
 const MAX_POLLEN_DAYS = 5
 
+interface Measure {
+  degrees?: number
+  unit?: string
+}
+
 interface WeatherHour {
   interval?: { startTime?: string }
-  temperature?: { degrees?: number; unit?: string }
+  temperature?: Measure
+  feelsLikeTemperature?: Measure
+  windChill?: Measure
+  wind?: { speed?: { value?: number; unit?: string } }
   weatherCondition?: { description?: { text?: string } }
   precipitation?: { probability?: { percent?: number } }
 }
@@ -26,6 +34,16 @@ interface PollenDay {
 
 function toFahrenheit(degrees: number, unit: string | undefined): number {
   return unit === 'FAHRENHEIT' ? degrees : degrees * 1.8 + 32
+}
+
+function toMph(value: number, unit: string | undefined): number {
+  return unit === 'MILES_PER_HOUR' ? value : value * 0.621371
+}
+
+function readF(measure: Measure | undefined): number | undefined {
+  return measure?.degrees === undefined
+    ? undefined
+    : toFahrenheit(measure.degrees, measure.unit)
 }
 
 function hoursBetween(from: Date, to: Date): number {
@@ -61,9 +79,12 @@ export class GoogleConditionsProvider implements ConditionsProvider {
     if (points.some((p) => p === null)) return null
 
     const [s, m, e] = points as Conditions[]
-    const { items, swingNote } = recommendWardrobe([s, m, e], preference)
+    const { items, swingNote, windNote } = recommendWardrobe([s, m, e], preference)
 
-    return { start: s, midday: m, end: e, pollen, wardrobe: items, swingNote, source: 'google' }
+    return {
+      start: s, midday: m, end: e, pollen,
+      wardrobe: items, swingNote, windNote, source: 'google',
+    }
   }
 
   private async fetchHours(at: LatLng, hours: number) {
@@ -122,11 +143,25 @@ function addHours(date: Date, hours: number): Date {
 /** Read one moment out of the hourly series. */
 function pick(hours: WeatherHour[], when: Date): Conditions | null {
   const hour = nearestHour(hours, when)
-  const degrees = hour?.temperature?.degrees
-  if (!hour || degrees === undefined) return null
+  const temperatureF = readF(hour?.temperature)
+  if (!hour || temperatureF === undefined) return null
+
+  const windMph = hour.wind?.speed?.value === undefined
+    ? 0
+    : toMph(hour.wind.speed.value, hour.wind.speed.unit)
+
+  // Prefer Google's own apparent temperature; fall back to wind chill so a
+  // missing field degrades to an honest number rather than the dry bulb.
+  const feelsLikeF =
+    readF(hour.feelsLikeTemperature) ??
+    readF(hour.windChill) ??
+    windChillF(temperatureF, windMph)
+
   return {
     at: when,
-    temperatureF: Math.round(toFahrenheit(degrees, hour.temperature?.unit)),
+    temperatureF: Math.round(temperatureF),
+    feelsLikeF: Math.round(feelsLikeF),
+    windMph: Math.round(windMph),
     summary: hour.weatherCondition?.description?.text ?? '',
     precipitationChance: Math.round(hour.precipitation?.probability?.percent ?? 0),
   }
